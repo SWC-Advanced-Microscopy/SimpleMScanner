@@ -1,5 +1,5 @@
 function scanAndAcquire
-% Produce simple scan waveforms for X/Y galvos and acquire data from one PMT channel
+% Produce simple scan waveforms for X/Y galvos and acquire data from one PMT channel using uni-directional scanning
 %
 % All parameters are hard-coded within the function to keep code short and focus
 % on the DAQ stuff.
@@ -25,6 +25,7 @@ function scanAndAcquire
 	pointsPerLine = 256;
 	samplesPerPoint = 4;
 	sampleRate 	= 512E3; 
+	fillFraction = 0.9; %1-fillFraction is considered to be the turn-around time and is excluded from the image
 	%----------------------------------
 
 
@@ -54,14 +55,17 @@ function scanAndAcquire
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% BUILD THE GALVO WAVEFORMS
 
-	%Calculate the number of samples per line
-	samplesPerLine = pointsPerLine*samplesPerPoint;
+	% Calculate the number of samples per line. We want to produce a final image composed of
+	% pointsPerLine data points on each line. However, if the fill fraction is less than 1, we
+	% need to collect more than this then trim it back. 
+	correctedPointsPerLine = ceil(pointsPerLine*(2-fillFraction)); %collect more points
+	samplesPerLine = correctedPointsPerLine*samplesPerPoint;
 
 	%So the Y waveform is:
 	yWaveform = linspace(amp,-amp,samplesPerLine*linesPerFrame);
 
 	%Produce the X waveform
-	xWaveform = linspace(-amp, amp, samplesPerLine)*1;
+	xWaveform = linspace(-amp, amp, samplesPerLine);
 	xWaveform = repmat(xWaveform,1,length(yWaveform)/length(xWaveform));
 
 	%Assemble the two waveforms into an N-by-2 array
@@ -138,9 +142,11 @@ function scanAndAcquire
 		end
 
 		x=decimate(x,samplesPerPoint);
-		%x(end)=[];
-		im=reshape(x,pointsPerLine,linesPerFrame)*-1;
+		im=reshape(x,correctedPointsPerLine,linesPerFrame);
+		im=im(end-pointsPerLine:end,:); %trim
 		im=rot90(im);
+		im=im*-1; %because the data are negative-going
+
 		hist(histAx,im(:),100);
 		set(histAx,'xlim',[-0.1,2])
 
