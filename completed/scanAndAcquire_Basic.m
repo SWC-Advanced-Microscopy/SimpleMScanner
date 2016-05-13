@@ -1,5 +1,7 @@
-function scanAndAcquire
+function scanAndAcquire_Basic
 % Produce simple scan waveforms for X/Y galvos and acquire data from one PMT channel using uni-directional scanning
+%
+% function scanAndAcquire_Basic
 %
 % All parameters are hard-coded within the function to keep code short and focus
 % on the DAQ stuff.
@@ -20,7 +22,7 @@ function scanAndAcquire
 
 	%----------------------------------
 	%User settings
-	amp=2; %Scanner amplitude
+	amp=2; %Scanner amplitude (actually, this is amplitude/2)
 	linesPerFrame = 256;
 	pointsPerLine = 256;
 	samplesPerPoint = 4;
