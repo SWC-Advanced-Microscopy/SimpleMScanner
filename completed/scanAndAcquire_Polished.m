@@ -254,10 +254,10 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 				fprintf('Can not reshape vector of length %d to a %d by %d matrix\n',size(x,1), correctedPointsPerLine, linesPerFrame)
 				return
 			end
-			im=reshape(x,correctedPointsPerLine,linesPerFrame);
-			im=im(end-pointsPerLine:end,:); %trim
-			im=rot90(im);
-			im=im*-1; %because the data are negative-going
+			im = reshape(x,correctedPointsPerLine,linesPerFrame);
+			im = im(end-pointsPerLine:end,:); %trim
+			im = rot90(im);
+			im = -im; %because the data are negative-going
 
 			%Update histogram on this frame
 			hist(histAx(chan),im(:),30);

@@ -135,9 +135,9 @@ function scanAndAcquire_Minimal(DeviceID)
 		if length(x)<=1
 			return
 		end
-		im=reshape(x,imSize,imSize);
-		im=rot90(im); %So the fast axis (x) is show along the image rows
-		im=-1*im; %because the data are negative-going
+		im = reshape(x,imSize,imSize);
+		im = rot90(im); %So the fast axis (x) is show along the image rows
+		im = -im; %because the data are negative-going
 
 		set(hIm,'CData',im);
 		set(imAx,'CLim',[0,2]);

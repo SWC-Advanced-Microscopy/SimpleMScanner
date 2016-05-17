@@ -190,6 +190,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 
 	%-----------------------------------------------
 	function stopAcq
+		% This function is called when the user presses ctrl-C or if the acquisition crashes
 		fprintf('Zeroing AO channels\n')
 		s.stop;
 		s.IsContinuous=false;
@@ -202,18 +203,18 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 
 
 	function plotData(src,event)
+		%This function is called every time a frame is acquired
 		x=event.Data;
 
 		if length(x)<=1
-			fprintf('No data\n')
 			return
 		end
 
-		x=decimate(x,samplesPerPoint); %This effectively averages and down-samples
-		im=reshape(x,correctedPointsPerLine,linesPerFrame);
-		im=im(end-pointsPerLine:end,:); %trim according to the fill-fraction to remove the turn-around 
-		im=rot90(im);
-		im=-1*im; %because the data are negative-going
+		x = decimate(x,samplesPerPoint); %This effectively averages and down-samples
+		im = reshape(x,correctedPointsPerLine,linesPerFrame);
+		im = im(end-pointsPerLine:end,:); %trim according to the fill-fraction to remove the turn-around 
+		im = rot90(im); %So the fast axis (x) is show along the image rows
+		im = -im; %because the data are negative-going
 
 		set(hIm,'CData',im);
 		set(imAx,'CLim',[0,2]);
