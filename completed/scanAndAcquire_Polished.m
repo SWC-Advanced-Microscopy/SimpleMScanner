@@ -123,8 +123,9 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%Add an analog input channel for the PMT signal
 	AI=s.addAnalogInputChannel(hardwareDeviceID, inputChans, 'Voltage'); 
+	AI_range = 2; % Digitise over +/- this range
 	for ii=1:length(AI)
-		AI(ii).Range = [-2,2]; %very likely this is fine to leave hard-coded like this.
+		AI(ii).Range = [-AI_range,AI_range]; %very likely this is fine to leave hard-coded like this.
 	end
 
 
@@ -275,6 +276,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 				else
 					thisFname = saveFname;
 				end
+				im = im * 2^16/AI_range ; %ensure values span 16 bit range
 				imwrite(uint16(im),thisFname,tiffWriteParams{:}) %This will wipe the negative numbers (the noise)
 			end
 

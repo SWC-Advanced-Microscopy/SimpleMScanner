@@ -105,7 +105,8 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 
 	%Add an analog input channel for the PMT signal
 	AI=s.addAnalogInputChannel(hardwareDeviceID, 'ai1', 'Voltage');
-	AI.Range = [-2,2];
+	AI_range = 2; % Digitise over +/- this range
+	AI.Range = [-AI_range,AI_range];
 
 
 	%Add a listener to get data back from this channel
@@ -219,6 +220,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 		set(hIm,'CData',im);
 		set(imAx,'CLim',[0,2]);
 		if ~isempty(saveFname) %Optionally write data to disk
+			im = im * 2^16/AI_range ; %ensure values span 16 bit range
 			imwrite(uint16(im),tiffWriteParams{:}) %This will wipe the negative numbers (the noise)
 		end
 
