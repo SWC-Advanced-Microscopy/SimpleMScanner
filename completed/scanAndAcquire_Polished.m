@@ -106,7 +106,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%Set up TIFF saving if needed
 	if ~isempty(saveFname)
-		tiffWriteParams={saveFname, 'tiff',   ...
+		tiffWriteParams={'tiff',   ...
 						'Compression', 'None', ... %Don't compress because this slows IO
 	    				'WriteMode', 'Append'};
 	end
@@ -270,9 +270,10 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 			set(imAx(chan),'CLim',[0,2]);
 
 			if ~isempty(saveFname) %Optionally write data to disk
-				imwrite(uint16(im),tiffWriteParams{:}) %This will wipe the negative numbers (the noise)
+				thisFname = sprintf('ch%02d_%s',inputChans(chan),saveFname);
+				imwrite(uint16(im),thisFname,tiffWriteParams{:}) %This will wipe the negative numbers (the noise)
 			end
-			
+
 		end %for chan = 1:size(x,2)
 
  	end %plotData
