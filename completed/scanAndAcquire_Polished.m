@@ -120,7 +120,6 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%Create a session (using NI hardware by default)
 	s=daq.createSession('ni');
 
-
 	%Add an analog input channel for the PMT signal
 	AI=s.addAnalogInputChannel(hardwareDeviceID, inputChans, 'Voltage'); 
 	AI_range = 2; % Digitise over +/- this range
@@ -128,23 +127,18 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 		AI(ii).Range = [-AI_range,AI_range]; %very likely this is fine to leave hard-coded like this.
 	end
 
-
 	%Add a listener to get data back from this channel
 	addlistener(s,'DataAvailable', @plotData); 
-
 
 	%Add analog two output channels for scanners 0 is x and 1 is y
 	s.addAnalogOutputChannel(hardwareDeviceID,0:1,'Voltage'); 
 
 
 
-
-
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-	% BUILD THE GALVO WAVEFORMS
-	dataToPlay = generateGalvoWaveforms(imSize,amp,samplesPerPoint,fillFraction,scanPattern); % generateGalvoWaveForms is in the "private" sub-directory
+	% BUILD THE GALVO WAVEFORMS (using function in "private" sub-directory)
+	dataToPlay = generateGalvoWaveforms(imSize,amp,samplesPerPoint,fillFraction,scanPattern); 
 	
-
 
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -204,8 +198,12 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	end
 
 
+
+
+
 	%-----------------------------------------------
 	function stopAcq
+		%Runs on function close
 		if ~exist('s','var')
 			return
 		end
@@ -219,7 +217,6 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 		fprintf('Releasing NI hardware\n')
 		release(s);
 	end %stopAcq
-
 
 	function plotData(~,event)
 		xData=event.Data;
