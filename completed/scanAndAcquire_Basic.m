@@ -1,28 +1,93 @@
-function scanAndAcquire_Basic
-% Produce simple scan waveforms for X/Y galvos and acquire data from one PMT channel using uni-directional scanning
+function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
+% Basic useful 2-photon microscope acquisition for one channel: acquires nice images that can be saved to disk
 %
-% function scanAndAcquire_Basic
+% function scanAndAcquire_Basic(hardwareDeviceID)
 %
-% All parameters are hard-coded within the function to keep code short and focus
-% on the DAQ stuff.
 %
-% No Pockels blanking and all the waveform is used.
+% Purpose
+% Acquires a 2-photon image stream from channel 1 of a DAQ card. All parameters are hard-coded within 
+% the function to keep code short and focus on the DAQ stuff. This function is based on 
+% scanAndAcquire_Minimal but adds the following:
+%  1) Correction of the X-mirror turn-around artefact
+%  2) Ability to acquire multiple samples per pixel to decrease noise
+%  3) Optionally save the image stream to disk
+%
+% No Pockels blanking.
+%
+%
+% Instructions
+% Simply call the function with device ID of your NI acquisition board. 
+% Quit with ctrl-C.
+%
+%
+% Inputs
+% hardwareDeviceID - a string defining the device ID of your NI acquisition boad. Use the command
+%                    "daq.getDevices" to find the ID of your board.
+% saveFname - A string defining the relative or absolute path of a file to which data should be written. 
+%             Data will be written as a TIFF stack. If not supplied, no data are saved to disk. 
 %
 %
 % Instructions
 % Simply call the function. Quit with ctrl-C.
 %
 %
+% Examples
+% ONE
+% The following example shows how to list the available DAQ devices and start
+% scanAndAcquire_Polished using the ID for the NI PCI-6115 card with the default. 
+% scanning options. 
+%
+% >> daq.getDevices
+%
+% ans = 
+%
+% Data acquisition devices:
+%
+% index Vendor Device ID          Description          
+% ----- ------ --------- ------------------------------
+% 1     ni     Dev1      National Instruments PCI-6115
+% 2     ni     Dev2      National Instruments PCIe-6321
+% 3     ni     Dev3      National Instruments PCI-6229
+%
+% >> scanAndAcquire_Basic('Dev1')
+% 
+% TWO
+% Save data to a file called '2pStream.tif'
+% >> scanAndAcquire_Basic('Dev1','2pStream.tif')
+% 
+% 
 % Rob Campbell - Basel 2015
 
 
-	%Define a cleanup object that will release the DAQ gracefully
+	if ~ischar(hardwareDeviceID)
+		fprintf('hardwareDeviceID should be a string\n')
+		return
+	end
+
+	if nargin<2
+		saveFname='';
+	end
+
+	if ~ischar(saveFname)
+		fprintf('The input argument saveFname should be a string. Not saving data to disk.\n')
+		saveFname='';
+	end
+
+	if ~isempty(saveFname)
+		tiffWriteParams={saveFname, 'tiff',   ...
+						'Compression', 'None', ... %Don't compress because this slows IO
+	    				'WriteMode', 'Append'};
+	end
+
+
+
+	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
 	tidyUp = onCleanup(@stopAcq);
 
 
 	%----------------------------------
-	%User settings
-	amp=2; %Scanner amplitude (actually, this is amplitude/2)
+	% Scan parameters
+	galvoAmp = 2; %Scanner amplitude (actually, this is amplitude/2)
 	linesPerFrame = 256;
 	pointsPerLine = 256;
 	samplesPerPoint = 4;
@@ -39,7 +104,7 @@ function scanAndAcquire_Basic
 
 
 	%Add an analog input channel for the PMT signal
-	AI=s.addAnalogInputChannel('Dev1', 'ai1', 'Voltage'); %Hard-coded. This is a PCI 6115
+	AI=s.addAnalogInputChannel(hardwareDeviceID, 'ai1', 'Voltage');
 	AI.Range = [-2,2];
 
 
@@ -48,7 +113,7 @@ function scanAndAcquire_Basic
 
 
 	%Add analog two output channels for scanners 0 is x and 1 is y
-	s.addAnalogOutputChannel('Dev1',0:1,'Voltage'); %the 6115 is assigned to Dev1
+	s.addAnalogOutputChannel(hardwareDeviceID,0:1,'Voltage');
 
 
 
@@ -64,10 +129,10 @@ function scanAndAcquire_Basic
 	samplesPerLine = correctedPointsPerLine*samplesPerPoint;
 
 	%So the Y waveform is:
-	yWaveform = linspace(amp,-amp,samplesPerLine*linesPerFrame);
+	yWaveform = linspace(galvoAmp,-galvoAmp,samplesPerLine*linesPerFrame);
 
 	%Produce the X waveform
-	xWaveform = linspace(-amp, amp, samplesPerLine);
+	xWaveform = linspace(-galvoAmp, galvoAmp, samplesPerLine);
 	xWaveform = repmat(xWaveform,1,length(yWaveform)/length(xWaveform));
 
 	%Assemble the two waveforms into an N-by-2 array
@@ -105,11 +170,10 @@ function scanAndAcquire_Basic
 
 	%We will plot the data on screen as they come in, so make a blank image
 	hFig=clf;
-	histAx=subplot(1,2,1);
-
-	imAx=subplot(1,2,2);
-	hAx=imagesc(zeros(linesPerFrame,pointsPerLine));
+	hIm=imagesc(zeros(linesPerFrame,pointsPerLine));
+	imAx=gca;
 	colormap gray
+	set(gca,'XTick',[],'YTick',[],'Position',[0,0,1,1])
 
 
 
@@ -119,7 +183,9 @@ function scanAndAcquire_Basic
 	s.startBackground %start the acquisition in the background
 
 	%Block. User presses ctrl-C to to quit, this calls stopAcq
-	while 1,pause(0.1), end
+	while 1
+		pause(0.1)
+	end
 
 
 	%-----------------------------------------------
@@ -143,19 +209,18 @@ function scanAndAcquire_Basic
 			return
 		end
 
-		x=decimate(x,samplesPerPoint);
+		x=decimate(x,samplesPerPoint); %This effectively averages and down-samples
 		im=reshape(x,correctedPointsPerLine,linesPerFrame);
-		im=im(end-pointsPerLine:end,:); %trim
+		im=im(end-pointsPerLine:end,:); %trim according to the fill-fraction to remove the turn-around 
 		im=rot90(im);
-		im=im*-1; %because the data are negative-going
+		im=-1*im; %because the data are negative-going
 
-		hist(histAx,im(:),100);
-		set(histAx,'xlim',[-0.1,2])
-
-		R=[min(im(:)), max(im(:))];
-		set(hAx,'CData',im);
+		set(hIm,'CData',im);
 		set(imAx,'CLim',[0,2]);
-		
+		if ~isempty(saveFname) %Optionally write data to disk
+			imwrite(uint16(im),tiffWriteParams{:}) %This will wipe the negative numbers (the noise)
+		end
+
  	end %plotData
 
 end %scanAndAcquire
