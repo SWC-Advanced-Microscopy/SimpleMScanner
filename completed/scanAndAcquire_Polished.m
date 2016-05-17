@@ -24,6 +24,32 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % 'samplesPerPoint'  - Number of samples per pixel. [1 by default]
 %
 %
+%
+% Examples
+% ONE
+% The following example shows how to list the available DAQ devices and start
+% scanAndAcquire_Polished using the ID for the NI PCI-6115 card with the default. 
+% scanning options. 
+%
+% >> daq.getDevices
+%
+% ans = 
+%
+% Data acquisition devices:
+%
+% index Vendor Device ID          Description          
+% ----- ------ --------- ------------------------------
+% 1     ni     Dev1      National Instruments PCI-6115
+% 2     ni     Dev2      National Instruments PCIe-6321
+% 3     ni     Dev3      National Instruments PCI-6229
+%
+% >> scanAndAcquire_Polished('Dev1')
+% 
+%
+% TWO
+% acquire data on channels 0 and 2
+% scanAndAcquire('Dev1','inputChans',[0,2])
+%
 % Rob Campbell - Basel 2015
 
 
@@ -40,7 +66,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 
 
-	%Define a cleanup object that will release the DAQ gracefully
+	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
 	tidyUp = onCleanup(@stopAcq);
 
 
@@ -51,7 +77,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%Define the possible parameter/value pairs
 	params = inputParser;
 	params.CaseSensitive = false;
-	params.addParamValue('inputChans', 2, @(x) isnumeric(x) && isscalar(x));
+	params.addParamValue('inputChans', 2, @(x) isnumeric(x));
 	params.addParamValue('amplitude', 2, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('frameSize', 256, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('samplesPerPoint', 1, @(x) isnumeric(x) && isscalar(x));
@@ -81,7 +107,9 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%Add an analog input channel for the PMT signal
 	AI=s.addAnalogInputChannel(hardwareDeviceID, inputChans, 'Voltage'); 
-	AI.Range = [-2,2]; %very likely this is fine to leave hard-coded like this.
+	for ii=1:length(AI)
+		AI(ii).Range = [-2,2]; %very likely this is fine to leave hard-coded like this.
+	end
 
 
 	%Add a listener to get data back from this channel
@@ -126,7 +154,9 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%The sample rate is fixed, so we report the frame rate
 	s.Rate = sampleRate;
 	frameRate = length(yWaveform)/sampleRate;
-	fprintf('Scanning at %0.2f frames per second\n',1/frameRate)
+
+
+	fprintf('Scanning %d by %d frames at %0.2f frames per second\n', linesPerFrame, pointsPerLine, 1/frameRate)
 
 	%The output buffer is re-filled for the next line when it becomes half empty
 	s.NotifyWhenScansQueuedBelow = round(length(yWaveform)*0.5); 
@@ -148,12 +178,20 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%We will plot the data on screen as they come in, so make a blank image
 	hFig=clf;
-	histAx=subplot(1,2,1);
+	for ii=1:length(inputChans)
+		imAx(ii)=subplot(1,length(inputChans),ii); %This axis will house the image
+		hAx(ii)=imagesc(zeros(linesPerFrame,pointsPerLine)); %blank image
 
-	imAx=subplot(1,2,2);
-	hAx=imagesc(zeros(linesPerFrame,pointsPerLine));
+		%Create axis into which we will place a histogram of pixel value intensities
+		pos = get(imAx(ii),'Position');
+		pos(3) = pos(3)*0.33;
+		pos(4) = pos(4)*0.175;
+		histAx(ii) = axes('Position', pos);
+	end
+
+	%Tweak settings on axes and figure elemenents
+	set(imAx, 'XTick',[], 'YTick', [])
 	colormap gray
-
 
 
 
@@ -162,11 +200,17 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	s.startBackground %start the acquisition in the background
 
 	%Block. User presses ctrl-C to to quit, this calls stopAcq
-	while 1,pause(0.1), end
+	while 1
+		pause(0.1)
+	end
 
 
 	%-----------------------------------------------
 	function stopAcq
+		if ~exist('s','var')
+			return
+		end
+
 		fprintf('Zeroing AO channels\n')
 		s.stop;
 		s.IsContinuous=false;
@@ -179,26 +223,38 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 
 	function plotData(src,event)
-		x=event.Data;
+		xData=event.Data;
 
-		if length(x)<=1
+		if size(xData,1)<=1
 			fprintf('No data\n')
 			return
 		end
 
-		x=decimate(x,samplesPerPoint);
-		im=reshape(x,correctedPointsPerLine,linesPerFrame);
-		im=im(end-pointsPerLine:end,:); %trim
-		im=rot90(im);
-		im=im*-1; %because the data are negative-going
+		for chan = 1:size(xData,2)
+			x=xData(:,chan);
+			x=decimate(x,samplesPerPoint);
 
-		hist(histAx,im(:),100);
-		set(histAx,'xlim',[-0.1,2])
+			if correctedPointsPerLine * linesPerFrame ~= size(x,1)
+				fprintf('Can not reshape vector of length %d to a %d by %d matrix\n',size(x,1), correctedPointsPerLine, linesPerFrame)
+				return
+			end
+			im=reshape(x,correctedPointsPerLine,linesPerFrame);
+			im=im(end-pointsPerLine:end,:); %trim
+			im=rot90(im);
+			im=im*-1; %because the data are negative-going
 
-		R=[min(im(:)), max(im(:))];
-		set(hAx,'CData',im);
-		set(imAx,'CLim',[0,2]);
-		
+			%Update histogram on this frame
+			hist(histAx(chan),im(:),30);
+			set(histAx(chan),'YTick',[], 'XLim',[-0.1,2], 'Color','None', 'Box','Off');
+			set(get(histAx(chan),'Children'),'EdgeColor','None','FaceColor','r')
+
+
+			%Update image on this frame
+			set(hAx(chan),'CData',im);
+			set(imAx(chan),'CLim',[0,2]);
+
+		end %for chan = 1:size(x,2)
+
  	end %plotData
 
 end %scanAndAcquire
