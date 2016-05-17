@@ -104,9 +104,6 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	scanPattern = params.Results.scanPattern;
 	% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-
-	verbose=0;
-
 	%Set up TIFF saving if needed
 	if ~isempty(saveFname)
 		tiffWriteParams={'tiff',   ...
@@ -179,7 +176,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	% SET UP THE FIGURE WINDOW THAT WILL DISPLAY THE DATA
 
 	%We will plot the data on screen as they come in, so make a blank image
-	hFig=clf;
+	clf
 	for ii=1:length(inputChans)
 		imAx(ii)=subplot(1,length(inputChans),ii); %This axis will house the image
 		hAx(ii)=imagesc(zeros(linesPerFrame,pointsPerLine)); %blank image
@@ -241,7 +238,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 				return
 			end
 			im = reshape(x,correctedPointsPerLine,linesPerFrame);
-			im = im(end-pointsPerLine:end,:); %trim
+			im = im(end-pointsPerLine:end,:); %trim TODO: modify for bidi scanning
 			im = rot90(im);
 			im = -im; %because the data are negative-going
 

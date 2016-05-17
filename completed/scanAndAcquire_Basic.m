@@ -125,14 +125,15 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	% Calculate the number of samples per line. We want to produce a final image composed of
 	% "imSize" data points on each line. However, if the fill fraction is less than 1, we
 	% need to collect more than this then trim it back. TODO: explain fillfraction
-	correctedPointsPerLine = ceil(imSize*(2-fillFraction)); %collect more points
+	fillFractionExcess = 2-fillFraction; %The proprotional increase in scanned area along X
+	correctedPointsPerLine = ceil(imSize*fillFractionExcess); %collect more points
 	samplesPerLine = correctedPointsPerLine*samplesPerPoint;
 
 	%So the Y waveform is:
 	yWaveform = linspace(galvoAmp,-galvoAmp,samplesPerLine*imSize);
 
 	%Produce the X waveform
-	xWaveform = linspace(-galvoAmp, galvoAmp, samplesPerLine); %TODO: images will not be square
+	xWaveform = linspace(-galvoAmp*fillFractionExcess, galvoAmp*fillFractionExcess, samplesPerLine); 
 	xWaveform = repmat(xWaveform,1,length(yWaveform)/length(xWaveform));
 
 	%Assemble the two waveforms into an N-by-2 array
