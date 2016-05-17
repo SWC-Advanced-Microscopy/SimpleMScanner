@@ -16,6 +16,8 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % Inputs (optional, supplied as param/value pairs)
 % 'inputChans' - A vector defining which input channels will be used to acquire data 
 %  				[0 by default, meaning channel 0 only is used to acquire data]
+% 'saveFname'  - A string defining the relative or absolute path of a file to which data should be written. 
+%                Data will be written as a TIFF stack. If not supplied, no data are saved to disk. 
 % 'amplitude'  - The amplitude of the voltage waveform. [2 by default, meaning +/- 2V]
 % 'frameSize'  - The number of pixels in x/y. Square frames only are produced. [256 by default.]
 % 'sampleRate' - The samples/second for the DAQ to run. [256E3 by default]
@@ -78,6 +80,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	params = inputParser;
 	params.CaseSensitive = false;
 	params.addParamValue('inputChans', 2, @(x) isnumeric(x));
+	params.addParamValue('saveFname', '', @(x) ischar(x));
 	params.addParamValue('amplitude', 2, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('frameSize', 256, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('samplesPerPoint', 1, @(x) isnumeric(x) && isscalar(x));
@@ -89,6 +92,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%Extract values from the inputParser
 	inputChans = params.Results.inputChans;
+	saveFname =  params.Results.saveFname;
 	amp = params.Results.amplitude;
 	linesPerFrame = params.Results.frameSize; 
 	pointsPerLine = params.Results.frameSize;
@@ -96,7 +100,19 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	sampleRate = params.Results.sampleRate;
 	fillFraction = params.Results.fillFraction;
 	% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+
 	verbose=0;
+
+	%Set up TIFF saving if needed
+	if ~isempty(saveFname)
+		tiffWriteParams={saveFname, 'tiff',   ...
+						'Compression', 'None', ... %Don't compress because this slows IO
+	    				'WriteMode', 'Append'};
+	end
+
+
+
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% CONNECT TO THE HARDWARE
@@ -253,6 +269,10 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 			set(hAx(chan),'CData',im);
 			set(imAx(chan),'CLim',[0,2]);
 
+			if ~isempty(saveFname) %Optionally write data to disk
+				imwrite(uint16(im),tiffWriteParams{:}) %This will wipe the negative numbers (the noise)
+			end
+			
 		end %for chan = 1:size(x,2)
 
  	end %plotData
