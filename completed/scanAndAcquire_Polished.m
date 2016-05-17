@@ -270,7 +270,11 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 			set(imAx(chan),'CLim',[0,2]);
 
 			if ~isempty(saveFname) %Optionally write data to disk
-				thisFname = sprintf('ch%02d_%s',inputChans(chan),saveFname);
+				if length(inputChans)>1
+					thisFname = sprintf('ch%02d_%s',inputChans(chan),saveFname);
+				else
+					thisFname = saveFname;
+				end
 				imwrite(uint16(im),thisFname,tiffWriteParams{:}) %This will wipe the negative numbers (the noise)
 			end
 
