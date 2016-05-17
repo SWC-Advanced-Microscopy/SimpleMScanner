@@ -19,11 +19,13 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % 'saveFname'  - A string defining the relative or absolute path of a file to which data should be written. 
 %                Data will be written as a TIFF stack. If not supplied, no data are saved to disk. 
 % 'amplitude'  - The amplitude of the voltage waveform. [2 by default, meaning +/- 2V]
-% 'frameSize'  - The number of pixels in x/y. Square frames only are produced. [256 by default.]
+% 'imSize'  - The number of pixels in x/y. Square frames only are produced. [256 by default.]
 % 'sampleRate' - The samples/second for the DAQ to run. [256E3 by default]
 % 'fillFraction' 	 - The proportion of the scan range to keep. 1-fillFraction 
 %	    			   is discarded due to the scanner turn-around. [0.9 by default]
 % 'samplesPerPoint'  - Number of samples per pixel. [1 by default]
+% 'scanPattern'  - A string defining whether we do uni or bidirectional scanning: 'uni' or 'bidi'
+%				 'uni' by default
 %
 %
 %
@@ -82,10 +84,11 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	params.addParamValue('inputChans', 0, @(x) isnumeric(x));
 	params.addParamValue('saveFname', '', @(x) ischar(x));
 	params.addParamValue('amplitude', 2, @(x) isnumeric(x) && isscalar(x));
-	params.addParamValue('frameSize', 256, @(x) isnumeric(x) && isscalar(x));
+	params.addParamValue('imSize', 256, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('samplesPerPoint', 1, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('sampleRate', 256E3, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('fillFraction', 0.9, @(x) isnumeric(x) && isscalar(x));
+	params.addParamValue('scanPattern', 'uni'.9, @(x) ischar(x));
 
 	%Process the input arguments in varargin using the inputParser object we just built
 	params.parse(varargin{:});
@@ -94,10 +97,11 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	inputChans = params.Results.inputChans;
 	saveFname =  params.Results.saveFname;
 	amp = params.Results.amplitude;
-	linesPerFrame = params.Results.frameSize; 
-	frameSize = params.Results.frameSize;
+	linesPerFrame = params.Results.imSize; 
+	imSize = params.Results.imSize;
 	sampleRate = params.Results.sampleRate;
 	fillFraction = params.Results.fillFraction;
+	scanPattern = params.Results.scanPattern;
 	% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 
@@ -141,25 +145,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% BUILD THE GALVO WAVEFORMS
-
-	% Calculate the number of samples per line. We want to produce a final image composed of
-	% pointsPerLine data points on each line. However, if the fill fraction is less than 1, we
-	% need to collect more than this then trim it back. 
-	correctedPointsPerLine = ceil(pointsPerLine*(2-fillFraction)); %collect more points
-	samplesPerLine = correctedPointsPerLine*samplesPerPoint;
-
-	%So the Y waveform is:
-	yWaveform = linspace(amp,-amp,samplesPerLine*linesPerFrame);
-
-	%Produce the X waveform
-	xWaveform = linspace(-amp, amp, samplesPerLine);
-	xWaveform = repmat(xWaveform,1,length(yWaveform)/length(xWaveform));
-
-	%Assemble the two waveforms into an N-by-2 array
-	dataToPlay = [xWaveform(:),yWaveform(:)];
-	if verbose
-		fprintf('Data waveforms have length %d\n',size(dataToPlay,1))
-	end
+	dataToPlay = generateGalvoWaveforms(imSize,amp,samplesPerPoint,fillFraction,scanPattern); % generateGalvoWaveForms is in the "private" sub-directory
 	
 
 
