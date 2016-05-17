@@ -6,7 +6,7 @@ function plotImageData(imData,h,saveFname,scanPattern)
 	% Purpose
 	% This function is called once each frame has been acquired.
 	% It plots one or more channels of data to screen and also optionally
-	% saves data to disk. 
+	% saves data to disk. This function is called by scanAndAcquire_Polished.
 	%
 	% 
 	% Inputs
@@ -45,12 +45,13 @@ function plotImageData(imData,h,saveFname,scanPattern)
 
 
 
-		%Update histogram on this frame
+		%Update histogram data
 		hist(h(chan).histAx,im(:),30);
 
+		%Keep the axes of the histogram looking nice
 		set(h(chan).histAx, ...
 			'YTick', [], ...
-			'XLim', [-0.1,2], ...
+			'XLim', [-0.1,2], ... %This is potentially a problem point should we choose to use a different digitisation range
 			'Color', 'None', ...
 			'Box', 'Off');
 
@@ -68,7 +69,9 @@ function plotImageData(imData,h,saveFname,scanPattern)
 
 
 
-		if ~isempty(saveFname) %Optionally write data to disk
+		% - -  - -  - -  - -  - -  - -  - -  - -  - -  
+		%Optionally write data to disk
+		if ~isempty(saveFname) 
 			if length(inputChans)>1
 				thisFname = sprintf('ch%02d_%s',inputChans(chan),saveFname);
 			else
@@ -79,5 +82,6 @@ function plotImageData(imData,h,saveFname,scanPattern)
 						'Compression', 'None', ... 
 	    				'WriteMode', 'Append');
 		end
+		% - -  - -  - -  - -  - -  - -  - -  - -  - -  
 
 	end
