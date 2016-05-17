@@ -79,7 +79,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%Define the possible parameter/value pairs
 	params = inputParser;
 	params.CaseSensitive = false;
-	params.addParamValue('inputChans', 2, @(x) isnumeric(x));
+	params.addParamValue('inputChans', 0, @(x) isnumeric(x));
 	params.addParamValue('saveFname', '', @(x) ischar(x));
 	params.addParamValue('amplitude', 2, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('frameSize', 256, @(x) isnumeric(x) && isscalar(x));
