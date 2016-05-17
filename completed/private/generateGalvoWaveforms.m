@@ -70,11 +70,8 @@ function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoin
 	% Calculate the number of samples per line. We want to produce a final image composed of
 	% imSize data points on each line. However, if the fill fraction is less than 1, we
 	% need to collect more than this then trim it back when we build the image. 
-	correctedPointsPerLine = ceil(imSize*fillFractionExcess); %collect more points along X if fillFraction < 1
-
-
-	%The number of samples collected per line will scale with the number of samples per point
-	samplesPerLine = correctedPointsPerLine*samplesPerPoint; 
+	% The number of samples collected per line will scale with the number of samples per point
+	samplesPerLine = ceil(imSize*fillFractionExcess*samplesPerPoint); 
 
 
 	%Produce the Y waveform

@@ -88,7 +88,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	params.addParamValue('samplesPerPoint', 1, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('sampleRate', 256E3, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('fillFraction', 0.9, @(x) isnumeric(x) && isscalar(x));
-	params.addParamValue('scanPattern', 'uni'.9, @(x) ischar(x));
+	params.addParamValue('scanPattern', 'uni', @(x) ischar(x));
 
 	%Process the input arguments in varargin using the inputParser object we just built
 	params.parse(varargin{:});
@@ -103,13 +103,6 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	fillFraction = params.Results.fillFraction;
 	scanPattern = params.Results.scanPattern;
 	% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-
-	%Set up TIFF saving if needed
-	if ~isempty(saveFname)
-		tiffWriteParams={'tiff',   ...
-						'Compression', 'None', ... %Don't compress because this slows IO
-	    				'WriteMode', 'Append'};
-	end
 
 
 
@@ -169,21 +162,21 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% SET UP THE FIGURE WINDOW THAT WILL DISPLAY THE DATA
 
-	%We will plot the data on screen as they come in, so make a blank image
+	%We will plot the data on screen as they come in
 	clf
 	for ii=1:length(inputChans)
-		imAx(ii)=subplot(1,length(inputChans),ii); %This axis will house the image
-		hAx(ii)=imagesc(zeros(linesPerFrame,pointsPerLine)); %blank image
+		h(ii).imAx=subplot(1,length(inputChans),ii); %This axis will house the image
+		h(ii).hAx=imagesc(zeros(linesPerFrame,pointsPerLine)); %blank image
 
 		%Create axis into which we will place a histogram of pixel value intensities
 		pos = get(imAx(ii),'Position');
 		pos(3) = pos(3)*0.33;
 		pos(4) = pos(4)*0.175;
-		histAx(ii) = axes('Position', pos);
+		h(ii).histAx = axes('Position', pos);
 	end
 
 	%Tweak settings on axes and figure elemenents
-	set(imAx, 'XTick',[], 'YTick', [])
+	set([h(:).imAx], 'XTick',[], 'YTick', [])
 	colormap gray
 
 
@@ -219,15 +212,25 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	end %stopAcq
 
 	function plotData(~,event)
-		xData=event.Data;
-		if size(xData,1)<=1
+		imData=event.Data;
+		if size(imData,1)<=1
 			fprintf('No data\n')
 			return
 		end
-		%External function call to function in private directory
-		plotImageData(xData,histAx,hAx,imAx,tiffWriteParams)
- 	end %plotData
 
+		%Down-sample the data so we have one sample per voxel
+		downSampled = decimate(imData(:,1), samplesPerPoint); 
+		if size(imData,2)>1
+			downSampled = repmat(downSampled,1,size(imData,2));
+			for chan=2:size(imData,2)
+				downSampled(:,chan) = decimate(downSampled(:,chan),samplesPerPoint);
+			end
+		end
+
+		%External function call to function in private directory
+		plotImageData(downSampled,h,saveFname,scanPattern)
+
+ 	end %plotData
 
 
 end %scanAndAcquire
