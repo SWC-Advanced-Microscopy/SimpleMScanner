@@ -88,8 +88,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	%----------------------------------
 	% Scan parameters
 	galvoAmp = 2; %Scanner amplitude (actually, this is amplitude/2)
-	linesPerFrame = 256;
-	pointsPerLine = 256;
+	imSize = 256; %Number pixel rows and columns
 	samplesPerPoint = 4;
 	sampleRate 	= 512E3; 
 	fillFraction = 0.9; %1-fillFraction is considered to be the turn-around time and is excluded from the image
@@ -124,16 +123,16 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	% BUILD THE GALVO WAVEFORMS
 
 	% Calculate the number of samples per line. We want to produce a final image composed of
-	% pointsPerLine data points on each line. However, if the fill fraction is less than 1, we
-	% need to collect more than this then trim it back. 
-	correctedPointsPerLine = ceil(pointsPerLine*(2-fillFraction)); %collect more points
+	% "imSize" data points on each line. However, if the fill fraction is less than 1, we
+	% need to collect more than this then trim it back. TODO: explain fillfraction
+	correctedPointsPerLine = ceil(imSize*(2-fillFraction)); %collect more points
 	samplesPerLine = correctedPointsPerLine*samplesPerPoint;
 
 	%So the Y waveform is:
-	yWaveform = linspace(galvoAmp,-galvoAmp,samplesPerLine*linesPerFrame);
+	yWaveform = linspace(galvoAmp,-galvoAmp,samplesPerLine*imSize);
 
 	%Produce the X waveform
-	xWaveform = linspace(-galvoAmp, galvoAmp, samplesPerLine);
+	xWaveform = linspace(-galvoAmp, galvoAmp, samplesPerLine); %TODO: images will not be square
 	xWaveform = repmat(xWaveform,1,length(yWaveform)/length(xWaveform));
 
 	%Assemble the two waveforms into an N-by-2 array
@@ -170,11 +169,11 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	% SET UP THE FIGURE WINDOW THAT WILL DISPLAY THE DATA
 
 	%We will plot the data on screen as they come in, so make a blank image
-	hFig=clf;
-	hIm=imagesc(zeros(linesPerFrame,pointsPerLine));
+	clf
+	hIm=imagesc(zeros(imSize));
 	imAx=gca;
 	colormap gray
-	set(gca,'XTick',[],'YTick',[],'Position',[0,0,1,1])
+	set(gca, 'XTick',[], 'YTick',[], 'Position',[0,0,1,1]) %Fill the window
 
 
 
@@ -212,8 +211,8 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 		end
 
 		x = decimate(x,samplesPerPoint); %This effectively averages and down-samples
-		im = reshape(x,correctedPointsPerLine,linesPerFrame);
-		im = im(end-pointsPerLine:end,:); %trim according to the fill-fraction to remove the turn-around 
+		im = reshape(x,correctedPointsPerLine,imSize);
+		im = im(end-imSize:end,:); %trim according to the fill-fraction to remove the turn-around 
 		im = rot90(im); %So the fast axis (x) is show along the image rows
 		im = -im; %because the data are negative-going
 

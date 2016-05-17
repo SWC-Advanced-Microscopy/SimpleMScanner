@@ -94,8 +94,8 @@ function scanAndAcquire_Minimal(DeviceID)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% SET UP THE FIGURE WINDOW THAT WILL DISPLAY THE DATA
-	hFig=clf;
-	hIm=imagesc(zeros(imSize,imSize));
+	clf
+	hIm=imagesc(zeros(imSize));
 	imAx=gca;
 	colormap gray
 	set(gca,'XTick',[], 'YTick',[], 'Position',[0,0,1,1])

@@ -95,8 +95,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	saveFname =  params.Results.saveFname;
 	amp = params.Results.amplitude;
 	linesPerFrame = params.Results.frameSize; 
-	pointsPerLine = params.Results.frameSize;
-	samplesPerPoint = params.Results.samplesPerPoint;
+	frameSize = params.Results.frameSize;
 	sampleRate = params.Results.sampleRate;
 	fillFraction = params.Results.fillFraction;
 	% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
