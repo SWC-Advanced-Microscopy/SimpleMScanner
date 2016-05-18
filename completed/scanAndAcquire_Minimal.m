@@ -50,14 +50,14 @@ function scanAndAcquire_Minimal(DeviceID)
 	galvoAmp   = 2 ;     % Galvo amplitude (actually, this is amplitude/2). Increasing this increases the area scanned (CAREFUL!)
 	imSize     = 256 ;   % Number of pixel rows and columns. Increasing this value will decrease the frame rate and increase the resolution.
 	sampleRate = 128E3 ; % Increasing the sampling rate will increase the frame rate (CAREFUL!)
-
+	AI_range = 2; % Digitise over +/- this range. This is a setting we are unlikely to change often
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% CONNECT TO THE HARDWARE
 	s=daq.createSession('ni'); %Create a session using NI hardware
 	s.Rate = sampleRate;  % The sample rate is fixed, so changing it will alter the frame rate
 	AI=s.addAnalogInputChannel(DeviceID, 'ai1', 'Voltage');	%Add an analog input channel for the PMT signal
-	AI.Range = [-2,2];
+	AI.Range = [-AI_range,AI_range];
 
 	addlistener(s,'DataAvailable', @plotData); 	% Add a listener to get data back from this channel
 	s.addAnalogOutputChannel(DeviceID,0:1,'Voltage'); % Add analog two output channels for scanners:  0 is x and 1 is y
@@ -135,7 +135,7 @@ function scanAndAcquire_Minimal(DeviceID)
 		im = -im; %because the data are negative-going
 
 		set(hIm,'CData',im);
-		set(imAx,'CLim',[0,2]);
+		set(imAx,'CLim',[0,AI_range]);
  	end %plotData
 
 
