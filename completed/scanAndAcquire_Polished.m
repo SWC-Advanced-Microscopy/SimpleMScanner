@@ -222,11 +222,11 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 		end
 		n=n+1; %incremenmt frame counter
 		%Down-sample the data so we have one sample per voxel
-		downSampled = decimate(imData(:,1), samplesPerPoint); 
+		downSampled(:,1) = decimate(imData(:,1), samplesPerPoint); 
 		if size(imData,2)>1
 			downSampled = repmat(downSampled,1,size(imData,2));
 			for chan=2:size(imData,2)
-				downSampled(:,chan) = decimate(downSampled(:,chan),samplesPerPoint);
+				downSampled(:,chan) = decimate(imData(:,chan),samplesPerPoint);
 			end
 		end
 
