@@ -182,7 +182,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	set([h(:).imAx], 'XTick',[], 'YTick', [])
 	colormap gray
 
-
+	n=0;
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% START!
@@ -211,16 +211,17 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 		fprintf('Releasing NI hardware\n')
 		release(s);
 
-		fprintf('Acquired %0.1f seconds of data\n', (now-startTime)*60^2*24 )
+		fprintf('Acquired %d frames over %0.1f seconds\n', n, (now-startTime)*60^2*24 )
 	end %stopAcq
 
 	function plotData(~,event)
 		imData=event.Data;
+
 		if size(imData,1)<=1
 			fprintf('No data\n')
 			return
 		end
-
+		n=n+1; %incremenmt frame counter
 		%Down-sample the data so we have one sample per voxel
 		downSampled = decimate(imData(:,1), samplesPerPoint); 
 		if size(imData,2)>1
