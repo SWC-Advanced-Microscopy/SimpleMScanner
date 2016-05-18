@@ -45,17 +45,17 @@ function plotImageData(imData,h,saveFname,scanPattern)
 
 		%Update image
 		set(h(chan).hAx,'CData',im);
-		set(h(chan).imAx,'CLim',[0,2]);
+		set(h(chan).imAx,'CLim',[0,2]); %TODO: This is potentially a problem point should we choose to use a different digitisation range
 
 
 		if h(chan).histAx ~= 0
 			%Update histogram data
-			hist(h(chan).histAx,im(:),30);
+			hist(h(chan).histAx,im(:),50);
 
 			%Keep the axes of the histogram looking nice
 			set(h(chan).histAx, ...
 				'YTick', [], ...
-				'XLim', [-0.1,2], ... %This is potentially a problem point should we choose to use a different digitisation range
+				'XLim', [-0.1,2], ... %TODO: This is potentially a problem point should we choose to use a different digitisation range
 				'Color', 'None', ...
 				'Box', 'Off');
 
@@ -64,21 +64,22 @@ function plotImageData(imData,h,saveFname,scanPattern)
 			c=get(h(chan).histAx,'Children');
 			set(c, ...
 				'EdgeColor','None', ...
-				'FaceColor','r')
+				'FaceColor','r',...
+				'FaceAlpha',0.75)
 		end
 
-
+		drawnow
 
 
 		% - -  - -  - -  - -  - -  - -  - -  - -  - -  
 		%Optionally write data to disk
 		if ~isempty(saveFname) 
-			if length(inputChans)>1
-				thisFname = sprintf('ch%02d_%s',inputChans(chan),saveFname);
+			if length(h)>1
+				thisFname = [h(chan).hAx.tag,saveFname];
 			else
 				thisFname = saveFname;
 			end
-			im = im * 2^16/AI_range ; %ensure values span 16 bit range
+			im = im * 2^16/2 ; %ensure values span 16 bit range (TODO: hard-coded, above)
 			imwrite(uint16(im), thisFname, 'tiff', ...
 						'Compression', 'None', ... 
 	    				'WriteMode', 'Append');

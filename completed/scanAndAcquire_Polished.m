@@ -165,6 +165,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	for ii=1:length(inputChans)
 		h(ii).imAx=subplot(1,length(inputChans),ii); %This axis will house the image
 		h(ii).hAx=imagesc(zeros(imSize)); %blank image
+		set(h(ii).hAx,'Tag',sprintf('ch%02d',inputChans(ii)))
 
 		if enableHist
 			%Create axis into which we will place a histogram of pixel value intensities
@@ -185,15 +186,13 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% START!
+	startTime = now;
 	s.startBackground %start the acquisition in the background
 
 	%Block. User presses ctrl-C to to quit, this calls stopAcq
 	while 1
 		pause(0.1)
 	end
-
-
-
 
 
 	%-----------------------------------------------
@@ -211,6 +210,8 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 		fprintf('Releasing NI hardware\n')
 		release(s);
+
+		fprintf('Acquired %0.1f seconds of data\n', (now-startTime)*60^2*24 )
 	end %stopAcq
 
 	function plotData(~,event)
