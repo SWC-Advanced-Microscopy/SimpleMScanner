@@ -139,8 +139,8 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
-	frameRate = length(dataToPlay)/sampleRate;
-	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,1/frameRate)
+	fps = sampleRate/length(dataToPlay);
+	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,fps)
 
 	%The output buffer is re-filled for the next line when it becomes half empty
 	s.NotifyWhenScansQueuedBelow = round(length(dataToPlay)*0.5); 
