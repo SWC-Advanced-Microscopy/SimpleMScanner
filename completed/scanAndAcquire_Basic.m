@@ -132,8 +132,8 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	%So the Y waveform is:
 	yWaveform = linspace(galvoAmp,-galvoAmp,samplesPerLine*imSize);
 
-	%Produce the X waveform
-	xWaveform = linspace(-galvoAmp*fillFractionExcess, galvoAmp*fillFractionExcess, samplesPerLine); 
+	% Produce the X waveform
+	xWaveform = linspace(-galvoAmp, galvoAmp, samplesPerLine); 
 	xWaveform = repmat(xWaveform,1,length(yWaveform)/length(xWaveform));
 
 	%Assemble the two waveforms into an N-by-2 array
