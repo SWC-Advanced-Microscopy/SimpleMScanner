@@ -18,6 +18,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 %  				[0 by default, meaning channel 0 only is used to acquire data]
 % 'saveFname'  - A string defining the relative or absolute path of a file to which data should be written. 
 %                Data will be written as a TIFF stack. If not supplied, no data are saved to disk. 
+%				 NOTE: if a TIFF  with this name already exists, data will be appended to it.
 % 'amplitude'  - The amplitude of the voltage waveform. [2 by default, meaning +/- 2V]
 % 'imSize'  - The number of pixels in x/y. Square frames only are produced. [256 by default.]
 % 'sampleRate' - The samples/second for the DAQ to run. [256E3 by default]
@@ -108,7 +109,6 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 
 
-
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% CONNECT TO THE HARDWARE
 
@@ -134,12 +134,11 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% BUILD THE GALVO WAVEFORMS (using function in "private" sub-directory)
 	dataToPlay = generateGalvoWaveforms(imSize,amp,samplesPerPoint,fillFraction,scanPattern); 
-	
 
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
-	fps = sampleRate/length(dataToPlay);
+	fps = (sampleRate/size(dataToPlay,2))/length(dataToPlay);
 	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,fps)
 
 	%The output buffer is re-filled for the next line when it becomes half empty
@@ -152,7 +151,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	s.queueOutputData(dataToPlay); %queue the first frame
 
 	%Pull in the data when the frame has been acquired
-	s.NotifyWhenDataAvailableExceeds=size(dataToPlay,1); %when to read back
+	s.NotifyWhenDataAvailableExceeds=length(dataToPlay); %when to read back
 
 
 

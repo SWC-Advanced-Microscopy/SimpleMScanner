@@ -147,7 +147,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	% PREPARE TO ACQUIRE
 
 	%The sample rate is fixed, so we report the frame rate
-	fps = sampleRate/length(yWaveform);
+	fps = (sampleRate/size(dataToPlay,2))/length(dataToPlay);
 	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,fps)
 
 	%The output buffer is re-filled for the next line when it becomes half empty
