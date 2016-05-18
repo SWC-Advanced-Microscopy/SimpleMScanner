@@ -40,9 +40,8 @@ function plotImageData(imData,h,saveFname,scanPattern)
 				startIndex = ceil((size(im,1)-imSize)/2);
 				im = im(:,startIndex:startIndex+imSize); %Trim the turnarounds on both edges
 			case 'uni'
-				im = im(:,end-imSize:end); %Trim the turnaround on one edge
+				im = im(:,end-imSize+1:end); %Trim the turnaround on one edge
 		end
-
 
 		%Update image
 		set(h(chan).hAx,'CData',im);
