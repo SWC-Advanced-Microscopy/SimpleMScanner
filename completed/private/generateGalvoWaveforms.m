@@ -1,7 +1,7 @@
-function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoint,fillFraction,scanPattern)
+function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoint,fillFraction,scanPattern,verbose)
 % Produce galvo wavorms for 2-photon microscope scanning 
 %
-% function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoint,fillFraction,scanPattern)
+% function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoint,fillFraction,scanPattern,verbose)
 %
 % Purpose
 % Generates the galvo waveforms for a 2-photon microscope. Patterns for square images only are produced.
@@ -20,6 +20,7 @@ function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoin
 %           artefacts. e.g. if fillfraction is 0.9, we will remove the outer 10% of the waveform. 
 %           In order to maintain a square image, we increase the size of the scanned area to compensate.
 % scanPattern - 'bidi' or 'uni' (uni by default)
+% verbose     - false by default. If true, print diagnostic messages to screen. 
 %
 %
 % Outputs
@@ -51,7 +52,9 @@ function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoin
 	if ~strcmpi(scanPattern,'uni') && ~strcmpi(scanPattern,'bidi')
 		error('scanPattern must be the string "uni" or "bidi"')
 	end
-
+	if nargin<6
+		verbose=false;
+	end
 
 	%Ensure scan amplitude isn't too large (scanners take +/- 10V)
 	scanAmplitude = abs(scanAmplitude);
@@ -83,11 +86,22 @@ function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoin
 	xWaveform = linspace(-xScanAmp, xScanAmp, samplesPerLine);
 
 	if strcmpi(scanPattern,'bidi')
+		if verbose
+			fprintf('Building bidirectional scan waveform\n')
+		end
 		xWaveform = [xWaveform,fliplr(xWaveform)];
 	end
 
 	xWaveform = repmat(xWaveform,1,length(yWaveform)/length(xWaveform));
 
+	if length(xWaveform) ~= length(yWaveform)
+		error('xWaveform and yWaveform are not the same length. The x is %d long and the y %d long',...\
+			length(xWaveform), length(yWaveform));
+	end
+
+	if verbose
+		fprintf('Final waveforms have a length of %d\n',length(xWaveform))
+	end
 
 	%Assemble the two waveforms into an N-by-2 array that can be sent to the NI board
 	dataToPlay = [xWaveform(:),yWaveform(:)];
