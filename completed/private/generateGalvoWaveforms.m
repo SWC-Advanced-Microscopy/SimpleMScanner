@@ -74,8 +74,17 @@ function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoin
 	% imSize data points on each line. However, if the fill fraction is less than 1, we
 	% need to collect more than this then trim it back when we build the image. 
 	% The number of samples collected per line will scale with the number of samples per point
-	samplesPerLine = ceil(imSize*fillFractionExcess*samplesPerPoint); 
+	pixelsPerLine=ceil(imSize*fillFractionExcess);
+	samplesPerLine = pixelsPerLine*samplesPerPoint;
 
+	if verbose
+		if fillFraction<1
+			fprintf('Based on a fill-fraction of %0.1f, the number of pixels per line goes up from %d to %d\n',...
+				fillFraction, imSize,pixelsPerLine)
+		else
+			fprintf('There are %d pixels per line\n',imSize)
+		end
+	end
 
 	%Produce the Y waveform
 	yWaveform = linspace(scanAmplitude, -scanAmplitude, samplesPerLine*imSize);
