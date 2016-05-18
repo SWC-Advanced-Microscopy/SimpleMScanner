@@ -174,7 +174,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	imAx=gca;
 	colormap gray
 	set(imAx, 'XTick',[], 'YTick',[], 'Position',[0,0,1,1]) %Fill the window
-
+	axis square
 
 
 

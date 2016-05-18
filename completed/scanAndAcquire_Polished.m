@@ -23,7 +23,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % 'sampleRate' - The samples/second for the DAQ to run. [256E3 by default]
 % 'fillFraction' 	 - The proportion of the scan range to keep. 1-fillFraction 
 %	    			   is discarded due to the scanner turn-around. [0.9 by default]
-% 'samplesPerPoint'  - Number of samples per pixel. [1 by default]
+% 'samplesPerPoint'  - Number of samples per pixel. [4 by default]
 % 'scanPattern'  - A string defining whether we do uni or bidirectional scanning: 'uni' or 'bidi'
 %				 'uni' by default
 % 'enableHist'   - A boolean. True by default. If true, overlays an intensity histogram on top of the image.
@@ -85,11 +85,11 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	params.addParamValue('saveFname', '', @(x) ischar(x));
 	params.addParamValue('amplitude', 2, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('imSize', 256, @(x) isnumeric(x) && isscalar(x));
-	params.addParamValue('samplesPerPoint', 1, @(x) isnumeric(x) && isscalar(x));
-	params.addParamValue('sampleRate', 256E3, @(x) isnumeric(x) && isscalar(x));
+	params.addParamValue('samplesPerPoint', 4, @(x) isnumeric(x) && isscalar(x));
+	params.addParamValue('sampleRate', 512E3, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('fillFraction', 0.9, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('scanPattern', 'uni', @(x) ischar(x));
-	params.addParamValue('enableHist', true, @(x) islogical(x) || x==0 || x==1);
+	params.addParamValue('enableHist', true, @(x) islogical (x) || x==0 || x==1);
 
 	%Process the input arguments in varargin using the inputParser object we just built
 	params.parse(varargin{:});
