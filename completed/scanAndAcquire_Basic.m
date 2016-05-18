@@ -92,6 +92,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	samplesPerPoint = 4;
 	sampleRate 	= 512E3; 
 	fillFraction = 0.9; %1-fillFraction is considered to be the turn-around time and is excluded from the image
+	AI_range = 2; % Digitise over +/- this range. This is a setting we are unlikely to change often
 	%----------------------------------
 
 
@@ -100,11 +101,10 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 
 	%Create a session using NI hardware
 	s=daq.createSession('ni');
-
+	s.Rate = sampleRate;
 
 	%Add an analog input channel for the PMT signal
 	AI=s.addAnalogInputChannel(hardwareDeviceID, 'ai1', 'Voltage');
-	AI_range = 2; % Digitise over +/- this range
 	AI.Range = [-AI_range,AI_range];
 
 
@@ -147,9 +147,8 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	% PREPARE TO ACQUIRE
 
 	%The sample rate is fixed, so we report the frame rate
-	s.Rate = sampleRate;
 	frameRate = length(yWaveform)/sampleRate;
-	fprintf('Scanning at %0.2f frames per second\n',1/frameRate)
+	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,1/frameRate)
 
 	%The output buffer is re-filled for the next line when it becomes half empty
 	s.NotifyWhenScansQueuedBelow = round(length(yWaveform)*0.5); 
@@ -174,7 +173,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	hIm=imagesc(zeros(imSize));
 	imAx=gca;
 	colormap gray
-	set(gca, 'XTick',[], 'YTick',[], 'Position',[0,0,1,1]) %Fill the window
+	set(imAx, 'XTick',[], 'YTick',[], 'Position',[0,0,1,1]) %Fill the window
 
 
 
@@ -218,7 +217,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 		im = -im; %because the data are negative-going
 
 		set(hIm,'CData',im);
-		set(imAx,'CLim',[0,2]);
+		set(imAx,'CLim',[0,AI_range]);
 		if ~isempty(saveFname) %Optionally write data to disk
 			im = im * 2^16/AI_range ; %ensure values span 16 bit range
 			imwrite(uint16(im),tiffWriteParams{:}) %This will wipe the negative numbers (the noise)

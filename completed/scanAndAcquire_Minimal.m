@@ -55,6 +55,7 @@ function scanAndAcquire_Minimal(DeviceID)
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% CONNECT TO THE HARDWARE
 	s=daq.createSession('ni'); %Create a session using NI hardware
+	s.Rate = sampleRate;  % The sample rate is fixed, so changing it will alter the frame rate
 	AI=s.addAnalogInputChannel(DeviceID, 'ai1', 'Voltage');	%Add an analog input channel for the PMT signal
 	AI.Range = [-2,2];
 
@@ -74,11 +75,8 @@ function scanAndAcquire_Minimal(DeviceID)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
-
-
-	s.Rate = sampleRate;  % The sample rate is fixed
 	frameRate = length(yWaveform)/sampleRate; % So this is the frame rate
-	fprintf('Scanning at %0.2f frames per second\n',1/frameRate) % Report the frame rate to screen
+	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,1/frameRate)
 
 	%The output buffer is re-filled for the next line when it becomes half empty
 	s.NotifyWhenScansQueuedBelow = round(length(yWaveform)*0.5); 
@@ -95,18 +93,16 @@ function scanAndAcquire_Minimal(DeviceID)
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% SET UP THE FIGURE WINDOW THAT WILL DISPLAY THE DATA
 	clf
-	hIm=imagesc(zeros(imSize));
+	hIm=imagesc(zeros(imSize)); %keep a handle to the image plot object
 	imAx=gca;
 	colormap gray
-	set(gca,'XTick',[], 'YTick',[], 'Position',[0,0,1,1])
+	set(imAx,'XTick',[], 'YTick',[], 'Position',[0,0,1,1])
 
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% START!
 	s.startBackground %start the acquisition in the background
-
-	%Block. User presses ctrl-C to to quit, this calls stopAcq
-	while 1
+	while 1 %Block. User presses ctrl-C to to quit, this calls stopAcq
 		pause(0.1)
 	end
 
@@ -123,8 +119,7 @@ function scanAndAcquire_Minimal(DeviceID)
 		s.queueOutputData([0,0]); %Queue zero volts on each channel
 		s.startForeground; % Set analog outputs to zero
 
-		% Release control of the board
-		release(s);
+		release(s);	% Release control of the board
 	end %stopAcq
 
 

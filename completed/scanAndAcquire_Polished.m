@@ -112,6 +112,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%Create a session (using NI hardware by default)
 	s=daq.createSession('ni');
+	s.Rate = sampleRate;
 
 	%Add an analog input channel for the PMT signal
 	AI=s.addAnalogInputChannel(hardwareDeviceID, inputChans, 'Voltage'); 
@@ -136,12 +137,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
-
-	%The sample rate is fixed, so we report the frame rate
-	s.Rate = sampleRate;
 	frameRate = length(yWaveform)/sampleRate;
-
-
 	fprintf('Scanning %d by %d frames at %0.2f frames per second\n', linesPerFrame, pointsPerLine, 1/frameRate)
 
 	%The output buffer is re-filled for the next line when it becomes half empty
