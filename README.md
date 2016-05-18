@@ -47,11 +47,12 @@ For educational purposes, it is possible to use a laser pointer and a photo-diod
 
 * **scanAndAcquire_Polished** - The same as scanAndAcquire_Basic but adds the following features:
   1. All important parameters can be set via parameter/value pairs
-  2. Acquisition of multiple channels
-  3. Scanning patterns and plotting are handled by external functions
-  4. A histogram overlay on top of the scan image.
-  5. Saving to disk
-  6. Bidirectional scanning
+  2. More error checks
+  3. Acquisition of multiple channels
+  4. Generation of scan patterns and image display are handled by external functions
+  5. Adds a histogram overlay on top of the scan image.
+  6. Saving to disk
+  7. Bidirectional scanning
 
 * The **buildingBlocks** folder contains code snippets to help teach the individual concepts from the above without providing a solution to the whole problem. 
 

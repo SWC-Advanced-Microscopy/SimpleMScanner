@@ -27,7 +27,7 @@ function plotImageData(imData,h,saveFname,scanPattern)
 	pointsPerLine = size(imData,1) / imSize; 
 
 
-	for chan = 1:size(xData,2)
+	for chan = 1:size(imData,2)
 		
 		im = reshape(imData(:,chan), pointsPerLine, imSize);
 		im = -rot90(im);
@@ -44,28 +44,30 @@ function plotImageData(imData,h,saveFname,scanPattern)
 		end
 
 
-
-		%Update histogram data
-		hist(h(chan).histAx,im(:),30);
-
-		%Keep the axes of the histogram looking nice
-		set(h(chan).histAx, ...
-			'YTick', [], ...
-			'XLim', [-0.1,2], ... %This is potentially a problem point should we choose to use a different digitisation range
-			'Color', 'None', ...
-			'Box', 'Off');
-
-
-		%Make the histogram red
-		c=get(h.(chan),'Children');
-		set(c, ...
-			'EdgeColor','None', ...
-			'FaceColor','r')
-
-
-		%Update image on this frame
+		%Update image
 		set(h(chan).hAx,'CData',im);
 		set(h(chan).imAx,'CLim',[0,2]);
+
+
+		if h(chan).histAx ~= 0
+			%Update histogram data
+			hist(h(chan).histAx,im(:),30);
+
+			%Keep the axes of the histogram looking nice
+			set(h(chan).histAx, ...
+				'YTick', [], ...
+				'XLim', [-0.1,2], ... %This is potentially a problem point should we choose to use a different digitisation range
+				'Color', 'None', ...
+				'Box', 'Off');
+
+
+			%Make the histogram red
+			c=get(h(chan).histAx,'Children');
+			set(c, ...
+				'EdgeColor','None', ...
+				'FaceColor','r')
+		end
+
 
 
 

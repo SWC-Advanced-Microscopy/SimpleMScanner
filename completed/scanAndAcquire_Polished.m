@@ -26,7 +26,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % 'samplesPerPoint'  - Number of samples per pixel. [1 by default]
 % 'scanPattern'  - A string defining whether we do uni or bidirectional scanning: 'uni' or 'bidi'
 %				 'uni' by default
-%
+% 'enableHist'   - A boolean. True by default. If true, overlays an intensity histogram on top of the image.
 %
 %
 % Examples
@@ -89,6 +89,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	params.addParamValue('sampleRate', 256E3, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('fillFraction', 0.9, @(x) isnumeric(x) && isscalar(x));
 	params.addParamValue('scanPattern', 'uni', @(x) ischar(x));
+	params.addParamValue('enableHist', true, @(x) islogical(x) || x==0 || x==1);
 
 	%Process the input arguments in varargin using the inputParser object we just built
 	params.parse(varargin{:});
@@ -102,6 +103,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	sampleRate = params.Results.sampleRate;
 	fillFraction = params.Results.fillFraction;
 	scanPattern = params.Results.scanPattern;
+	enableHist = params.Results.enableHist;
 	% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 
@@ -137,11 +139,11 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
-	frameRate = length(yWaveform)/sampleRate;
-	fprintf('Scanning %d by %d frames at %0.2f frames per second\n', linesPerFrame, pointsPerLine, 1/frameRate)
+	frameRate = length(dataToPlay)/sampleRate;
+	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,1/frameRate)
 
 	%The output buffer is re-filled for the next line when it becomes half empty
-	s.NotifyWhenScansQueuedBelow = round(length(yWaveform)*0.5); 
+	s.NotifyWhenScansQueuedBelow = round(length(dataToPlay)*0.5); 
 
 	%This listener tops up the output buffer
 	addlistener(s,'DataRequired', @(src,event) src.queueOutputData(dataToPlay));
@@ -162,13 +164,17 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	clf
 	for ii=1:length(inputChans)
 		h(ii).imAx=subplot(1,length(inputChans),ii); %This axis will house the image
-		h(ii).hAx=imagesc(zeros(linesPerFrame,pointsPerLine)); %blank image
+		h(ii).hAx=imagesc(zeros(imSize)); %blank image
 
-		%Create axis into which we will place a histogram of pixel value intensities
-		pos = get(imAx(ii),'Position');
-		pos(3) = pos(3)*0.33;
-		pos(4) = pos(4)*0.175;
-		h(ii).histAx = axes('Position', pos);
+		if enableHist
+			%Create axis into which we will place a histogram of pixel value intensities
+			pos = get(h(ii).imAx,'Position');
+			pos(3) = pos(3)*0.33;
+			pos(4) = pos(4)*0.175;
+			h(ii).histAx = axes('Position', pos);
+		else
+			h(ii).histAx=0;
+		end
 	end
 
 	%Tweak settings on axes and figure elemenents
