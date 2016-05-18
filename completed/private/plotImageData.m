@@ -37,15 +37,21 @@ function plotImageData(imData,h,saveFname,scanPattern)
 			case 'bidi'
 				%Flip the even rows if data were acquired bidirectionally
 				im(2:2:end,:) = fliplr(im(2:2:end,:));
-				startIndex = ceil((size(im,1)-imSize)/2);
-				im = im(:,startIndex:startIndex+imSize); %Trim the turnarounds on both edges
+
+				phaseShift=26; %TODO: put this elsewhere!
+				im(1:2:end,:) = circshift(im(1:2:end,:),-phaseShift,2);
+				im(2:2:end,:) = circshift(im(2:2:end,:), phaseShift,2);
+
+				im = fliplr(im); %To keep it in the same orientation as the uni-directional scan
+
+				im = im(:,1+phaseShift:end-phaseShift); %Trim the turnaround on one edge (BADLY)
 			case 'uni'
 				im = im(:,end-imSize+1:end); %Trim the turnaround on one edge
 		end
 
 		%Update image
 		set(h(chan).hAx,'CData',im);
-		set(h(chan).imAx,'CLim',[0,2]); %TODO: This is potentially a problem point should we choose to use a different digitisation range
+		set(h(chan).imAx,'CLim',[0,2],'XLim',[1,size(im,2)]); %TODO: This is potentially a problem point should we choose to use a different digitisation range
 
 
 		if h(chan).histAx ~= 0
