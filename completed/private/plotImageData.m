@@ -24,7 +24,7 @@ function plotImageData(imData,h,saveFname,scanPattern)
 	imSize = size(get(h(1).hAx,'CData'),1);
 
 	%The number of points on one line (larger then imSize if fillFraction < 1)
-	pointsPerLine = size(imData,1) / imSize; 
+	pointsPerLine = ceil(size(imData,1) / imSize); 
 
 
 	for chan = 1:size(imData,2)
