@@ -144,7 +144,6 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
 	fps = sampleRate/length(dataToPlay);
-	fps = fps/size(dataToPlay,2); %TODO: no idea why this is needed here and not in _basic and _minimal
 	fps = fps * nFramesToQueue;
 	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,fps)
 
