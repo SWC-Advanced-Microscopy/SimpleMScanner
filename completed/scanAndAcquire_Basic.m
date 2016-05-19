@@ -103,7 +103,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	tidyUp = onCleanup(@() stopAcq(s));
 
 	%Add an analog input channel for the PMT signal
-	AI=s.addAnalogInputChannel(hardwareDeviceID, 'ai1', 'Voltage');
+	AI=s.addAnalogInputChannel(hardwareDeviceID, 'ai0', 'Voltage');
 	AI.Range = [-AI_range,AI_range];
 
 
@@ -146,7 +146,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	% PREPARE TO ACQUIRE
 
 	%The sample rate is fixed, so we report the frame rate
-	fps = (sampleRate/size(dataToPlay,2))/length(dataToPlay);
+	fps = sampleRate/length(dataToPlay);
 	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,fps)
 
 	%The output buffer is re-filled for the next line when it becomes half empty

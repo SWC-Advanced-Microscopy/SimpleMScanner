@@ -57,7 +57,7 @@ function scanAndAcquire_Minimal(DeviceID)
 	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
 	tidyUp = onCleanup(@() stopAcq(s));
 
-	AI=s.addAnalogInputChannel(DeviceID, 'ai1', 'Voltage');	%Add an analog input channel for the PMT signal
+	AI=s.addAnalogInputChannel(DeviceID, 'ai0', 'Voltage');	%Add an analog input channel for the PMT signal
 	AI.Range = [-AI_range,AI_range];
 
 	addlistener(s,'DataAvailable', @plotData); 	% Add a listener to get data back from this channel
@@ -76,7 +76,7 @@ function scanAndAcquire_Minimal(DeviceID)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
-	fps = (sampleRate/size(dataToPlay,2))/length(dataToPlay);
+	fps = sampleRate/length(dataToPlay);
 	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,fps)
 
 	%The output buffer is re-filled for the next line when it becomes half empty
