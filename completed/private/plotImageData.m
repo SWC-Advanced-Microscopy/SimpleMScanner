@@ -28,9 +28,6 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay)
 
 	imSize = size(get(h(1).hAx,'CData'),1);
 
-	%The number of points on one line (larger then imSize if fillFraction < 1)
-	pointsPerLine = ceil(size(imData,1) / imSize); 
-
 	timeStamp = now*60^2*24*1E3; %MATLAB serial date in ms. This is used for saving. 
 
 	%The analog input range is in the CLIM property of the image axes
@@ -39,7 +36,7 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay)
 
 	for chan = 1:size(imData,2)
 		
-		im = reshape(imData(:,chan), pointsPerLine, imSize);
+		im = reshape(imData(:,chan), [], imSize);
 		im = -rot90(im);
 
 		%Remove the turn-around artefact 
@@ -83,7 +80,6 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay)
 				'FaceAlpha',0.75)
 		end
 
-
 		% - -  - -  - -  - -  - -  - -  - -  - -  - -  
 		%Optionally write data to disk
 		if ~isempty(saveFname) 
@@ -92,7 +88,7 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay)
 			else
 				thisFname = saveFname;
 			end
-			im = im * 2^16/2 ; %ensure values span 16 bit range (TODO: hard-coded, above)
+			im = im * 2^16/AI_range ; %ensure values span 16 bit range
 
 			imwrite(uint16(im), thisFname, 'tiff', ...
 						'Compression', 'None', ... 

@@ -19,7 +19,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % 'saveFname'  - A string defining the relative or absolute path of a file to which data should be written. 
 %                Data will be written as a TIFF stack. If not supplied, no data are saved to disk. 
 %				 NOTE: if a TIFF  with this name already exists, data will be appended to it.
-% 'amplitude'  - The amplitude of the voltage waveform. [2 by default, meaning +/- 2V]
+% 'scannerAmplitude'  - The amplitude of the voltage waveform. [2 by default, meaning +/- 2V]
 % 'imSize'  - The number of pixels in x/y. Square frames only are produced. [256 by default.]
 % 'sampleRate' - The samples/second for the DAQ to run. [256E3 by default]
 % 'fillFraction' 	 - The proportion of the scan range to keep. 1-fillFraction 
@@ -79,7 +79,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	params.CaseSensitive = false;
 	params.addParameter('inputChans', 0, @(x) isnumeric(x));
 	params.addParameter('saveFname', '', @(x) ischar(x));
-	params.addParameter('amplitude', 2, @(x) isnumeric(x) && isscalar(x));
+	params.addParameter('scannerAmplitude', 2, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('imSize', 256, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('samplesPerPixel', 4, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('sampleRate', 512E3, @(x) isnumeric(x) && isscalar(x));
@@ -94,7 +94,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%Extract values from the inputParser
 	inputChans = params.Results.inputChans;
 	saveFname =  params.Results.saveFname;
-	amp = params.Results.amplitude;
+	amp = params.Results.scannerAmplitude;
 	imSize = params.Results.imSize;
 	samplesPerPixel = params.Results.samplesPerPixel;
 	sampleRate = params.Results.sampleRate;
@@ -118,14 +118,14 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	s.Rate = sampleRate;
 
 
-	%Add an analog input channel for the PMT signal
+	%Add one or more analog input channels for the PMT signals
 	AI=s.addAnalogInputChannel(hardwareDeviceID, inputChans, 'Voltage'); 
 	AI_range = 2; % Digitise over +/- this range
 	for ii=1:length(AI)
 		AI(ii).Range = [-AI_range,AI_range]; %very likely this is fine to leave hard-coded like this.
 	end
 
-	%Add a listener to get data back from this channel
+	%Add a listener to get data back after each frame
 	addlistener(s,'DataAvailable', @plotData); 
 
 	%Add analog two output channels for scanners 0 is x and 1 is y
@@ -155,7 +155,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	fps = fps * nFramesToQueue;
 	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,fps)
 
-	%The output buffer is re-filled for the next line when it becomes half empty
+	%The output buffer is re-filled when it becomes half empty
 	s.NotifyWhenScansQueuedBelow = round(length(dataToPlay)*0.5); 
 
 	%This listener tops up the output buffer
