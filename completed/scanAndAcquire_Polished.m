@@ -24,7 +24,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % 'sampleRate' - The samples/second for the DAQ to run. [256E3 by default]
 % 'fillFraction' 	 - The proportion of the scan range to keep. 1-fillFraction 
 %	    			   is discarded due to the scanner turn-around. [0.9 by default]
-% 'samplesPerPoint'  - Number of samples per pixel. [4 by default]
+% 'samplesPerPixel'  - Number of samples per pixel. [4 by default]
 % 'scanPattern'  - A string defining whether we do uni or bidirectional scanning: 'uni' or 'bidi'
 %				 'uni' by default
 % 'enableHist'   - A boolean. True by default. If true, overlays an intensity histogram on top of the image.
@@ -75,15 +75,15 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%Define the possible parameter/value pairs
 	params = inputParser;
 	params.CaseSensitive = false;
-	params.addParamValue('inputChans', 0, @(x) isnumeric(x));
-	params.addParamValue('saveFname', '', @(x) ischar(x));
-	params.addParamValue('amplitude', 2, @(x) isnumeric(x) && isscalar(x));
-	params.addParamValue('imSize', 256, @(x) isnumeric(x) && isscalar(x));
-	params.addParamValue('samplesPerPoint', 4, @(x) isnumeric(x) && isscalar(x));
-	params.addParamValue('sampleRate', 512E3, @(x) isnumeric(x) && isscalar(x));
-	params.addParamValue('fillFraction', 0.9, @(x) isnumeric(x) && isscalar(x));
-	params.addParamValue('scanPattern', 'uni', @(x) ischar(x));
-	params.addParamValue('enableHist', true, @(x) islogical (x) || x==0 || x==1);
+	params.addParameter('inputChans', 0, @(x) isnumeric(x));
+	params.addParameter('saveFname', '', @(x) ischar(x));
+	params.addParameter('amplitude', 2, @(x) isnumeric(x) && isscalar(x));
+	params.addParameter('imSize', 256, @(x) isnumeric(x) && isscalar(x));
+	params.addParameter('samplesPerPixel', 4, @(x) isnumeric(x) && isscalar(x));
+	params.addParameter('sampleRate', 512E3, @(x) isnumeric(x) && isscalar(x));
+	params.addParameter('fillFraction', 0.9, @(x) isnumeric(x) && isscalar(x));
+	params.addParameter('scanPattern', 'uni', @(x) ischar(x));
+	params.addParameter('enableHist', true, @(x) islogical (x) || x==0 || x==1);
 
 	%Process the input arguments in varargin using the inputParser object we just built
 	params.parse(varargin{:});
@@ -93,7 +93,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	saveFname =  params.Results.saveFname;
 	amp = params.Results.amplitude;
 	imSize = params.Results.imSize;
-	samplesPerPoint = params.Results.samplesPerPoint;
+	samplesPerPixel = params.Results.samplesPerPixel;
 	sampleRate = params.Results.sampleRate;
 	fillFraction = params.Results.fillFraction;
 	scanPattern = params.Results.scanPattern;
@@ -108,10 +108,6 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%Create a session (using NI hardware by default)
 	s=daq.createSession('ni');
 	s.Rate = sampleRate;
-
-
-	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
-	tidyUp = onCleanup(@() stopAcq(s));
 
 
 	%Add an analog input channel for the PMT signal
@@ -131,8 +127,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% BUILD THE GALVO WAVEFORMS (using function in "private" sub-directory)
-	dataToPlay = generateGalvoWaveforms(imSize,amp,samplesPerPoint,fillFraction,scanPattern); 
-
+	dataToPlay = generateGalvoWaveforms(imSize,amp,samplesPerPixel,fillFraction,scanPattern); 
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
@@ -181,7 +176,11 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% START!
-	startTime = now;
+
+	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
+	startTime=now;
+	tidyUp = onCleanup(@() stopAcq(s,startTime));
+
 	s.startBackground %start the acquisition in the background
 
 	%Block. User presses ctrl-C to to quit, this calls stopAcq
@@ -194,6 +193,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 
 	function plotData(~,event)
+
 		imData=event.Data;
 
 		if size(imData,1)<=1
@@ -202,11 +202,11 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 		end
 
 		%Down-sample the data so we have one sample per voxel
-		downSampled(:,1) = decimate(imData(:,1), samplesPerPoint); 
+		downSampled(:,1) = decimate(imData(:,1), samplesPerPixel); 
 		if size(imData,2)>1
 			downSampled = repmat(downSampled,1,size(imData,2));
 			for chan=2:size(imData,2)
-				downSampled(:,chan) = decimate(imData(:,chan),samplesPerPoint);
+				downSampled(:,chan) = decimate(imData(:,chan),samplesPerPixel);
 			end
 		end
 
@@ -219,10 +219,9 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 end %scanAndAcquire
 
 
-function stopAcq(s)
-
+function stopAcq(s,startTime)
+	fprintf('Acquired %0.1f seconds of data\n',(now-startTime)*60^2*24)
 	fprintf('Zeroing AO channels\n')
-
 	s.stop;
 	s.IsContinuous=false;
 	s.queueOutputData([0,0]);
@@ -230,6 +229,5 @@ function stopAcq(s)
 
 	fprintf('Releasing NI hardware\n')
 	release(s);
-
 
 end %stopAcq

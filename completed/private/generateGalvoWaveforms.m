@@ -1,7 +1,7 @@
-function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoint,fillFraction,scanPattern,verbose)
+function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPixel,fillFraction,scanPattern,verbose)
 % Produce galvo wavorms for 2-photon microscope scanning 
 %
-% function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoint,fillFraction,scanPattern,verbose)
+% function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPixel,fillFraction,scanPattern,verbose)
 %
 % Purpose
 % Generates the galvo waveforms for a 2-photon microscope. Patterns for square images only are produced.
@@ -13,7 +13,7 @@ function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoin
 % scanAmplitude - Scalar defining the maximum (+/-) voltage of the waveform. 
 %          e.g. if scanAmplitude is 2 then data are acquired using waveform 
 %           command voltages going between +/- 2 (but see "fillFraction")
-% samplesPerPoint - Scalar defining the number of samples contributing to each pixel. Increasing
+% samplesPerPixel - Scalar defining the number of samples contributing to each pixel. Increasing
 %           this value will increase image quality but decrease frame rate.
 % fillFraction - Scalar (0 to 1) defining what proportion of the waveform to keep and 
 %           use for image formation. This is used to remove the x mirror turn-around 
@@ -37,8 +37,8 @@ function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoin
 	if ~isscalar(scanAmplitude)
 		error('scanAmplitude should be a scalar\n')
 	end
-	if ~isscalar(samplesPerPoint)
-		error('samplesPerPoint should be a scalar\n')
+	if ~isscalar(samplesPerPixel)
+		error('samplesPerPixel should be a scalar\n')
 	end
 	if ~isscalar(fillFraction)
 		error('fillFraction should be a scalar\n')
@@ -68,7 +68,7 @@ function dataToPlay = generateGalvoWaveforms(imSize,scanAmplitude,samplesPerPoin
 	% The number of samples collected per line will scale with the number of samples per point
 	fillFractionExcess = 2-fillFraction; %The proprotional increase in scanned area along X
 	pixelsPerLine=ceil(imSize*fillFractionExcess);
-	samplesPerLine = pixelsPerLine*samplesPerPoint;
+	samplesPerLine = pixelsPerLine*samplesPerPixel;
 
 	if verbose
 		if fillFraction<1

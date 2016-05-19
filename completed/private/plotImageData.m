@@ -74,8 +74,6 @@ function plotImageData(imData,h,saveFname,scanPattern)
 				'FaceAlpha',0.75)
 		end
 
-		drawnow
-
 
 		% - -  - -  - -  - -  - -  - -  - -  - -  - -  
 		%Optionally write data to disk
@@ -91,5 +89,7 @@ function plotImageData(imData,h,saveFname,scanPattern)
 	    				'WriteMode', 'Append');
 		end
 		% - -  - -  - -  - -  - -  - -  - -  - -  - -  
+
+
 
 	end
