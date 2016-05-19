@@ -111,12 +111,13 @@ function scanAndAcquire_Minimal(DeviceID)
 
 	function plotData(src,event)
 		%This function is called every time a frame is acquired
-		x=event.Data;
+		x=event.Data; % x is a vector (the NI card obviously doesn't know we have a square image)
 
-		if length(x)<=1
+		if length(x)<=1 %sometimes there are no data. If so, bail out.
 			return
 		end
-		im = reshape(x,imSize,imSize);
+
+		im = reshape(x,imSize,imSize); %Reshape the data vector into a square image
 		im = rot90(im); %So the fast axis (x) is show along the image rows
 		im = -im; %because the data are negative-going
 

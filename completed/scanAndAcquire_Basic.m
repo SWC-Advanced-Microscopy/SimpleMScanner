@@ -85,7 +85,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	% Scan parameters
 	galvoAmp = 2; %Scanner amplitude (actually, this is amplitude/2)
 	imSize = 256; %Number pixel rows and columns
-	samplesPerPoint = 4;
+	samplesPerPixel = 4;
 	sampleRate 	= 512E3; 
 	fillFraction = 0.9; %1-fillFraction is considered to be the turn-around time and is excluded from the image
 	AI_range = 2; % Digitise over +/- this range. This is a setting we are unlikely to change often
@@ -126,7 +126,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	% need to collect more than this then trim it back. TODO: explain fillfraction
 	fillFractionExcess = 2-fillFraction; %The proprotional increase in scanned area along X
 	correctedPointsPerLine = ceil(imSize*fillFractionExcess); %collect more points
-	samplesPerLine = correctedPointsPerLine*samplesPerPoint;
+	samplesPerLine = correctedPointsPerLine*samplesPerPixel;
 
 	%So the Y waveform is:
 	yWaveform = linspace(galvoAmp,-galvoAmp,samplesPerLine*imSize);
@@ -195,7 +195,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 			return
 		end
 
-		x = decimate(x,samplesPerPoint); %This effectively averages and down-samples
+		x = mean(reshape(x,[],samplesPerPixel),2); %Average all points from the same pixel
 		im = reshape(x,correctedPointsPerLine,imSize);
 		im = im(end-imSize:end,:); %trim according to the fill-fraction to remove the turn-around 
 		im = rot90(im); %So the fast axis (x) is show along the image rows

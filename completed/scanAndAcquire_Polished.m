@@ -223,12 +223,12 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 			return
 		end
 
-		%Down-sample the data so we have one sample per voxel
-		downSampled(:,1) = decimate(imData(:,1), samplesPerPixel); 
+		%Average all points from the same pixel
+		downSampled(:,1) = mean(reshape(imData(:,1),[],samplesPerPixel),2); 
 		if size(imData,2)>1
 			downSampled = repmat(downSampled,1,size(imData,2));
 			for chan=2:size(imData,2)
-				downSampled(:,chan) = decimate(imData(:,chan),samplesPerPixel);
+				downSampled(:,chan) = mean(reshape(imData(:,chan),[],samplesPerPixel),2); 
 			end
 		end
 
