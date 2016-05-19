@@ -168,10 +168,11 @@ classdef  scanAndAcquire_OO < handle
 		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 		% Short methods follow. Longer ones in standalone .m files
 		function startScan(obj)
+			%TODO: check if running before carrying on
 			obj.prepareQueueAndBuffer %TODO: test if data have been queued or just run this each time?
+			obj.setUpFigureWindow %TODO: plotting should possibly be done via a procedural GUI and a notifier
 			obj.startTime=now;
 			obj.numFrames=0;
-			obj.setUpFigureWindow %TODO: plotting should possibly be done via a procedural GUI and a notifier
 			obj.hDAQ.startBackground %start the acquisition in the background
 		end %close startScan
 
@@ -198,7 +199,7 @@ classdef  scanAndAcquire_OO < handle
 			% It populates the property	imageDataFromLastFrame
 
 			imData=event.Data;
-
+			size(imData) %TODO: I think there is a bug here for multiple channels <=============
 			if size(imData,1)<=1
 				return
 			end
@@ -269,13 +270,13 @@ classdef  scanAndAcquire_OO < handle
 	end %close methods
 
 	methods (Hidden)
-		function frame = buildImageFromOneChannel(obj,imData,channelID)
-			% Construct a square image from column "channelID" in the 
+		function frame = buildImageFromOneChannel(obj,imData,channelColumn)
+			% Construct a square image from column "channelColumn" in the 
 			% nSamples-by-cChannels array, imData, that has come off the 
 			% acquisition card. Turn-around artifact removed.
 
 			%Average all points from the same pixel
-			frame = imData(:,channelID);
+			frame = imData(:,channelColumn);
 			frame = mean(reshape(imData,[],obj.samplesPerPixel),2); 
 
 			%Create a square image of the correct orientation
