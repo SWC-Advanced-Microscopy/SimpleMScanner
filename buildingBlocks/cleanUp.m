@@ -8,7 +8,8 @@ function cleanUp
 % The "cleanUp" function will run even if the caller crashes.
 %
 % Rob Campbell - Basel 2015
-
+%
+% see: http://blogs.mathworks.com/loren/2008/03/10/keeping-things-tidy/
 
 %Define a cleanup object that will release the DAQ gracefully
 tidyUp = onCleanup(@cleanUpFunction);

@@ -43,9 +43,6 @@ function scanAndAcquire_Minimal(DeviceID)
 % Rob Campbell - Basel 2015
 
 
-	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
-	tidyUp = onCleanup(@stopAcq);
-
 	% Scan parameters
 	galvoAmp   = 2 ;     % Galvo amplitude (actually, this is amplitude/2). Increasing this increases the area scanned (CAREFUL!)
 	imSize     = 256 ;   % Number of pixel rows and columns. Increasing this value will decrease the frame rate and increase the resolution.
@@ -56,6 +53,10 @@ function scanAndAcquire_Minimal(DeviceID)
 	% CONNECT TO THE HARDWARE
 	s=daq.createSession('ni'); %Create a session using NI hardware
 	s.Rate = sampleRate;  % The sample rate is fixed, so changing it will alter the frame rate
+
+	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
+	tidyUp = onCleanup(@() stopAcq(s));
+
 	AI=s.addAnalogInputChannel(DeviceID, 'ai1', 'Voltage');	%Add an analog input channel for the PMT signal
 	AI.Range = [-AI_range,AI_range];
 
@@ -108,21 +109,6 @@ function scanAndAcquire_Minimal(DeviceID)
 
 
 
-
-	%-----------------------------------------------
-	function stopAcq
-		% This function is called when the user presses ctrl-C or if the acquisition crashes
-		s.stop; % Stop the acquisition
-
-		% Zero the scanners
-		s.IsContinuous=false; %
-		s.queueOutputData([0,0]); %Queue zero volts on each channel
-		s.startForeground; % Set analog outputs to zero
-
-		release(s);	% Release control of the board
-	end %stopAcq
-
-
 	function plotData(src,event)
 		%This function is called every time a frame is acquired
 		x=event.Data;
@@ -140,3 +126,19 @@ function scanAndAcquire_Minimal(DeviceID)
 
 
 end %scanAndAcquire
+
+
+
+
+%-----------------------------------------------
+function stopAcq(s)
+	% This function is called when the user presses ctrl-C or if the acquisition crashes
+	s.stop; % Stop the acquisition
+
+	% Zero the scanners
+	s.IsContinuous=false; %
+	s.queueOutputData([0,0]); %Queue zero volts on each channel
+	s.startForeground; % Set analog outputs to zero
+
+	release(s);	% Release control of the board
+end %stopAcq

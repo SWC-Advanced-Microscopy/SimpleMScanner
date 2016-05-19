@@ -81,10 +81,6 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 
 
 
-	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
-	tidyUp = onCleanup(@stopAcq);
-
-
 	%----------------------------------
 	% Scan parameters
 	galvoAmp = 2; %Scanner amplitude (actually, this is amplitude/2)
@@ -102,6 +98,9 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	%Create a session using NI hardware
 	s=daq.createSession('ni');
 	s.Rate = sampleRate;
+
+	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
+	tidyUp = onCleanup(@() stopAcq(s));
 
 	%Add an analog input channel for the PMT signal
 	AI=s.addAnalogInputChannel(hardwareDeviceID, 'ai1', 'Voltage');
@@ -188,20 +187,6 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	end
 
 
-	%-----------------------------------------------
-	function stopAcq
-		% This function is called when the user presses ctrl-C or if the acquisition crashes
-		fprintf('Zeroing AO channels\n')
-		s.stop;
-		s.IsContinuous=false;
-		s.queueOutputData([0,0]);
-		s.startForeground;
-
-		fprintf('Releasing NI hardware\n')
-		release(s);
-	end %stopAcq
-
-
 	function plotData(src,event)
 		%This function is called every time a frame is acquired
 		x=event.Data;
@@ -226,3 +211,18 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
  	end %plotData
 
 end %scanAndAcquire
+
+
+
+%-----------------------------------------------
+function stopAcq(s)
+	% This function is called when the user presses ctrl-C or if the acquisition crashes
+	s.stop; % Stop the acquisition
+
+	% Zero the scanners
+	s.IsContinuous=false; %
+	s.queueOutputData([0,0]); %Queue zero volts on each channel
+	s.startForeground; % Set analog outputs to zero
+
+	release(s);	% Release control of the board
+end %stopAcq

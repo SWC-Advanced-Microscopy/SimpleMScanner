@@ -69,13 +69,6 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	end
 
 
-
-
-	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
-	tidyUp = onCleanup(@stopAcq);
-
-
-
 	% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	%Parse optional arguments (varargin) using an inputParser object
 
@@ -115,6 +108,11 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%Create a session (using NI hardware by default)
 	s=daq.createSession('ni');
 	s.Rate = sampleRate;
+
+
+	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
+	tidyUp = onCleanup(@() stopAcq(s));
+
 
 	%Add an analog input channel for the PMT signal
 	AI=s.addAnalogInputChannel(hardwareDeviceID, inputChans, 'Voltage'); 
@@ -181,37 +179,19 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	set([h(:).imAx], 'XTick',[], 'YTick', [])
 	colormap gray
 
-	n=0;
-
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% START!
 	startTime = now;
 	s.startBackground %start the acquisition in the background
 
 	%Block. User presses ctrl-C to to quit, this calls stopAcq
-	while 1
+	while 1		
 		pause(0.1)
 	end
 
 
 	%-----------------------------------------------
-	function stopAcq
-		%Runs on function close
-		if ~exist('s','var')
-			return
-		end
 
-		fprintf('Zeroing AO channels\n')
-		s.stop;
-		s.IsContinuous=false;
-		s.queueOutputData([0,0]);
-		s.startForeground;
-
-		fprintf('Releasing NI hardware\n')
-		release(s);
-
-		fprintf('Acquired %d frames over %0.1f seconds\n', n, (now-startTime)*60^2*24 )
-	end %stopAcq
 
 	function plotData(~,event)
 		imData=event.Data;
@@ -220,7 +200,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 			fprintf('No data\n')
 			return
 		end
-		n=n+1; %incremenmt frame counter
+
 		%Down-sample the data so we have one sample per voxel
 		downSampled(:,1) = decimate(imData(:,1), samplesPerPoint); 
 		if size(imData,2)>1
@@ -237,3 +217,19 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 
 end %scanAndAcquire
+
+
+function stopAcq(s)
+
+	fprintf('Zeroing AO channels\n')
+
+	s.stop;
+	s.IsContinuous=false;
+	s.queueOutputData([0,0]);
+	s.startForeground;
+
+	fprintf('Releasing NI hardware\n')
+	release(s);
+
+
+end %stopAcq
