@@ -50,14 +50,13 @@ For educational purposes, it is possible to use a laser pointer and a photo-diod
   2. More error checks
   3. Acquisition of multiple channels
   4. Generation of scan patterns and image display are handled by external functions
-  5. Adds a histogram overlay on top of the scan image.
-  6. Saving to disk
+  5. Adds an optional histogram overlay on top of the scan images
+  6. Saving to disk with time-stamps in TIFF info
   7. Bidirectional scanning
 
 * The **buildingBlocks** folder contains code snippets to help teach the individual concepts from the above without providing a solution to the whole problem. 
 
 * The repository also contains functions for loading saved TIFF stacks from disk, etc.
-* 
 
 
 # Disclaimer
