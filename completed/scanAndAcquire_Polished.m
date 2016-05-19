@@ -128,10 +128,24 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% BUILD THE GALVO WAVEFORMS (using function in "private" sub-directory)
 	dataToPlay = generateGalvoWaveforms(imSize,amp,samplesPerPixel,fillFraction,scanPattern); 
+	%We want at least 250 ms of data in the queue, to be really certain don't we hit buffer underflows and the scanning stops
+	secondsOfDataInQueue = length(dataToPlay)/sampleRate;
+	minDataThreshold = 0.25; %Must have at least this much data in the queue
+	nFramesToQueue = ceil(minDataThreshold/secondsOfDataInQueue);
+	dataToPlay = repmat(dataToPlay,nFramesToQueue ,1); %expand queued data accordingly
+   
+	msOfDataInQueue = round( (length(dataToPlay)/sampleRate)*1000 );
+	fprintf('There is %d ms of data in the output queue ', msOfDataInQueue)
+	if nFramesToQueue>1
+		fprintf('(queuing in blocks of %d frames)',nFramesToQueue)
+	end
+	fprintf('\n')
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
-	fps = (sampleRate/size(dataToPlay,2))/length(dataToPlay);
+	fps = sampleRate/length(dataToPlay);
+	fps = fps/size(dataToPlay,2); %TODO: no idea why this is needed here and not in _basic and _minimal
+	fps = fps * nFramesToQueue;
 	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,fps)
 
 	%The output buffer is re-filled for the next line when it becomes half empty
@@ -143,8 +157,8 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	s.IsContinuous = true; %needed to provide continuous behavior
 	s.queueOutputData(dataToPlay); %queue the first frame
 
-	%Pull in the data when the frame has been acquired
-	s.NotifyWhenDataAvailableExceeds=length(dataToPlay); %when to read back
+	%Pull in the data when each frame has been acquired
+	s.NotifyWhenDataAvailableExceeds=length(dataToPlay)/nFramesToQueue; %when to read back
 
 
 
