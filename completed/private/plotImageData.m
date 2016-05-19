@@ -1,4 +1,4 @@
-function plotImageData(imData,h,saveFname,scanPattern)
+function plotImageData(imData,h,saveFname,bidiPhaseDelay)
 	%Plot (and optionally save) data produced by scanAndAcquire_Polished
 	%
 	% function plotImageData(imData,h,saveFname,scanPattern)
@@ -15,11 +15,16 @@ function plotImageData(imData,h,saveFname,scanPattern)
 	% h - plot handles structure produced by scanAndAcquire_Polished
 	% saveFname - [string] the relative or absolute path of a file to which data should be saved. 
 	%             If empty, no data are saved.
-	% scanPattern - [string] Either 'uni' or 'bidi' depending on the scan pattern used.
+	% bidiPhaseDelay - [optional] If missing or empty, we assume the images are acquired using a uni-directional
+	%                  scan pattern. If bidiPhaseDelay is present, it is a scalar used to correct the phase
+	% 			       offset between the outgoing and return scanlines.
 	%
 	%
 	% Rob Campbell - Basel 2016
 
+	if nargin<4
+		bidiPhaseDelay=[];
+	end
 
 	imSize = size(get(h(1).hAx,'CData'),1);
 
@@ -27,32 +32,35 @@ function plotImageData(imData,h,saveFname,scanPattern)
 	pointsPerLine = ceil(size(imData,1) / imSize); 
 
 	timeStamp = now*60^2*24*1E3; %MATLAB serial date in ms. This is used for saving. 
-	
+
+	%The analog input range is in the CLIM property of the image axes
+	AI_range = get(h(1).imAx,'CLim');
+	AI_range = AI_range(2);
+
 	for chan = 1:size(imData,2)
 		
 		im = reshape(imData(:,chan), pointsPerLine, imSize);
 		im = -rot90(im);
 
 		%Remove the turn-around artefact 
-		switch lower(scanPattern)
-			case 'bidi'
-				%Flip the even rows if data were acquired bidirectionally
-				im(2:2:end,:) = fliplr(im(2:2:end,:));
+		if ~isempty(bidiPhaseDelay)
+			%Flip the even rows if data were acquired bidirectionally
+			im(2:2:end,:) = fliplr(im(2:2:end,:));
 
-				phaseShift=26; %TODO: put this elsewhere!
-				im(1:2:end,:) = circshift(im(1:2:end,:),-phaseShift,2);
-				im(2:2:end,:) = circshift(im(2:2:end,:), phaseShift,2);
+			im(1:2:end,:) = circshift(im(1:2:end,:),-bidiPhaseDelay,2);
+			im(2:2:end,:) = circshift(im(2:2:end,:), bidiPhaseDelay,2);
 
-				im = fliplr(im); %To keep it in the same orientation as the uni-directional scan
+			im = fliplr(im); %To keep it in the same orientation as the uni-directional scan
 
-				im = im(:,1+phaseShift:end-phaseShift); %Trim the turnaround on one edge (BADLY)
-			case 'uni'
-				im = im(:,end-imSize+1:end); %Trim the turnaround on one edge
+			im = im(:,1+bidiPhaseDelay:end-bidiPhaseDelay); %Trim the turnaround on one edge (BADLY)
+			set(h(chan).imAx,'XLim',[1,size(im,2)]);
+		else
+			im = im(:,end-imSize+1:end); %Trim the turnaround on one edge
 		end
 
 		%Update image
 		set(h(chan).hAx,'CData',im);
-		set(h(chan).imAx,'CLim',[0,2],'XLim',[1,size(im,2)]); %TODO: This is potentially a problem point should we choose to use a different digitisation range
+
 
 
 		if h(chan).histAx ~= 0
@@ -62,7 +70,7 @@ function plotImageData(imData,h,saveFname,scanPattern)
 			%Keep the axes of the histogram looking nice
 			set(h(chan).histAx, ...
 				'YTick', [], ...
-				'XLim', [-0.1,2], ... %TODO: This is potentially a problem point should we choose to use a different digitisation range
+				'XLim', [-0.1,AI_range], ... 
 				'Color', 'None', ...
 				'Box', 'Off');
 

@@ -27,6 +27,8 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % 'samplesPerPixel'  - Number of samples per pixel. [4 by default]
 % 'scanPattern'  - A string defining whether we do uni or bidirectional scanning: 'uni' or 'bidi'
 %				 'uni' by default
+% 'bidiPhase' - a scalar that defines the offset in pixels between the outgoing and return lines
+% 			    in bidirectional scanning. 26 by default. This parameter needs changing often and is sensitive.
 % 'enableHist'   - A boolean. True by default. If true, overlays an intensity histogram on top of the image.
 %
 %
@@ -83,6 +85,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	params.addParameter('sampleRate', 512E3, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('fillFraction', 0.9, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('scanPattern', 'uni', @(x) ischar(x));
+	params.addParameter('bidiPhase', 26,  @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('enableHist', true, @(x) islogical (x) || x==0 || x==1);
 
 	%Process the input arguments in varargin using the inputParser object we just built
@@ -97,7 +100,12 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	sampleRate = params.Results.sampleRate;
 	fillFraction = params.Results.fillFraction;
 	scanPattern = params.Results.scanPattern;
+	bidiPhase = params.Results.bidiPhase;
 	enableHist = params.Results.enableHist;
+
+	if ~strcmpi(scanPattern,'bidi')
+		bidiPhase=[];
+	end
 	% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 
@@ -129,12 +137,12 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	% BUILD THE GALVO WAVEFORMS (using function in "private" sub-directory)
 	dataToPlay = generateGalvoWaveforms(imSize,amp,samplesPerPixel,fillFraction,scanPattern); 
 	%We want at least 250 ms of data in the queue, to be really certain don't we hit buffer underflows and the scanning stops
-	secondsOfDataInQueue = length(dataToPlay)/sampleRate;
+	secondsOfDataInQueue = length(dataToPlay)/s.Rate;
 	minDataThreshold = 0.25; %Must have at least this much data in the queue
 	nFramesToQueue = ceil(minDataThreshold/secondsOfDataInQueue);
 	dataToPlay = repmat(dataToPlay,nFramesToQueue ,1); %expand queued data accordingly
    
-	msOfDataInQueue = round( (length(dataToPlay)/sampleRate)*1000 );
+	msOfDataInQueue = round( (length(dataToPlay)/s.Rate)*1000 );
 	fprintf('There is %d ms of data in the output queue ', msOfDataInQueue)
 	if nFramesToQueue>1
 		fprintf('(queuing in blocks of %d frames)',nFramesToQueue)
@@ -143,7 +151,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
-	fps = sampleRate/length(dataToPlay);
+	fps = s.Rate/length(dataToPlay);
 	fps = fps * nFramesToQueue;
 	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,fps)
 
@@ -184,7 +192,8 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	end
 
 	%Tweak settings on axes and figure elemenents
-	set([h(:).imAx], 'XTick',[], 'YTick', [])
+	set([h(:).imAx], 'XTick',[], 'YTick', [], 'CLim',[0,AI_range]) %note: we store the AI_range here
+
 	colormap gray
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -224,7 +233,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 		end
 
 		%External function call to function in private directory
-		plotImageData(downSampled,h,saveFname,scanPattern)
+		plotImageData(downSampled,h,saveFname,bidiPhase)
 
  	end %plotData
 
