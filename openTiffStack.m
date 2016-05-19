@@ -1,7 +1,7 @@
-function [im,imInfo] = openTiffStack(fileName)
+function [im,timeStamps,imInfo] = openTiffStack(fileName)
 % Loading a tiff stack into a 3-D array
 %
-% function [im,imInfo] = openTiffStack(fileName)
+% function [im,timeStamps,imInfo] = openTiffStack(fileName)
 %
 % 
 % Purpose
@@ -15,6 +15,7 @@ function [im,imInfo] = openTiffStack(fileName)
 %
 % Output 
 % im - matrix containing the image read from disk.
+% timeStamps - vector of time-stamps in ms with respect to the first frame
 % imInfo - a structure containing the image header information. 
 %
 %
@@ -48,3 +49,11 @@ for ii=2:length(imInfo)
 end
 
 
+%Generate time stamps
+timeStamps = ones(1,length(imInfo));
+
+for ii=1:length(timeStamps)
+  timeStamps(ii) = str2num(imInfo(ii).ImageDescription);
+end
+
+timeStamps = timeStamps-timeStamps(1);

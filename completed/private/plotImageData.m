@@ -84,9 +84,12 @@ function plotImageData(imData,h,saveFname,scanPattern)
 				thisFname = saveFname;
 			end
 			im = im * 2^16/2 ; %ensure values span 16 bit range (TODO: hard-coded, above)
+			timeStamp = now*60^2*24*1E3; %MATLAB serial date in ms
+
 			imwrite(uint16(im), thisFname, 'tiff', ...
 						'Compression', 'None', ... 
-	    				'WriteMode', 'Append');
+	    				'WriteMode', 'Append',....
+	    				'Description',sprintf('%f',timeStamp));
 		end
 		% - -  - -  - -  - -  - -  - -  - -  - -  - -  
 
