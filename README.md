@@ -54,6 +54,9 @@ For educational purposes, it is possible to use a laser pointer and a photo-diod
   6. Saving to disk with time-stamps in TIFF info
   7. Bidirectional scanning
 
+* **scanAndAcquire_OO** - The same features as scanAndAcquire_Polished but in an object-oriented interface.
+
+
 * The **buildingBlocks** folder contains code snippets to help teach the individual concepts from the above without providing a solution to the whole problem. 
 
 * The repository also contains functions for loading saved TIFF stacks from disk, etc.
