@@ -194,8 +194,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 		if length(x)<=1
 			return
 		end
-
-		x = mean(reshape(x,[],samplesPerPixel),2); %Average all points from the same pixel
+		x = mean(reshape(x,samplesPerPixel,[]),1)'; %Average all points from the same pixel
 		im = reshape(x,correctedPointsPerLine,imSize);
 		im = im(end-imSize:end,:); %trim according to the fill-fraction to remove the turn-around 
 		im = rot90(im); %So the fast axis (x) is show along the image rows
