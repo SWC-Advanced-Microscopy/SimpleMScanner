@@ -98,13 +98,15 @@ classdef  scanAndAcquire_OO < handle
 
 		%Settings that are unlikely to need changing
 		AI_range = 2 			% Digitise over +/- this range
-		scannerChannels = 0:1	% These are the AO channels to which the scanners are connected [x,y]
-		sessionType = 'ni' 		% We will work with NI hardware
-		measurementType = 'Voltage' % We will acquire voltage data 
 		maxScannerVoltage = 10 
 		minSecondsOfBufferedData = 0.25 %Each time fill the output buffer with at least this many seconds of data to avoid buffer under-runs
 	end
 
+	properties (Access=private)
+		sessionType = 'ni' 		% We will work with NI hardware
+		measurementType = 'Voltage' % We will acquire voltage data 
+		scannerChannels = 0:1	% These are the AO channels to which the scanners are connected [x,y]
+	end
 
 	methods
 
@@ -183,6 +185,11 @@ classdef  scanAndAcquire_OO < handle
 
 			obj.hDAQ.stop; 
 
+			if ~isempty(obj.figureHandles)
+				obj.figureHandles.fig.delete %close figure
+				obj.figureHandles=[];
+			end
+
 			if reportFramesAcquired
 				if obj.numFrames==0
 					fprintf('\nSomething went wrong. No frames were acquired.\n')
@@ -199,7 +206,7 @@ classdef  scanAndAcquire_OO < handle
 			% It populates the property	imageDataFromLastFrame
 
 			imData=event.Data;
-			size(imData) %TODO: I think there is a bug here for multiple channels <=============
+
 			if size(imData,1)<=1
 				return
 			end
@@ -266,6 +273,51 @@ classdef  scanAndAcquire_OO < handle
 
 			obj.fps
 		end %close scanSettings
+
+
+
+
+		% Setters for properties which require connected DAQ objects to be updated.
+		% A setter is run when a value is assigned to a property. 
+
+		function set.AI_range(obj,val)
+			obj.AI_range = val;
+			if isempty(obj.hAI)
+				return
+			end
+				
+			for ii=1:length(obj.hAI)
+				%Set the digitization range
+				obj.hAI(ii).Range = [-obj.AI_range,obj.AI_range];
+			end
+		end
+
+		function set.inputChans(obj,val)
+			obj.inputChans=val;
+			if isempty(obj.hDAQ)
+				return
+			end
+
+			%Remove the existing analog input channels
+			chans=strmatch('ai',{obj.hDAQ.Channels.ID});
+			if ~isempty(chans)
+				obj.hDAQ.removeChannel(chans)
+			end
+
+			%Add the new channels
+			obj.hAI=obj.hDAQ.addAnalogInputChannel(obj.deviceID, obj.inputChans, obj.measurementType); 
+			obj.AI_range = obj.AI_range; %Apply the current analog input range to these new channels
+		end
+
+		function set.sampleRate(obj,val)
+			obj.sampleRate=val;
+			if isempty(obj.hDAQ)
+				return
+			end
+			obj.hDAQ.Rate = obj.sampleRate;
+		end			
+
+
 
 	end %close methods
 

@@ -8,6 +8,14 @@ function plotLastFrameData(obj)
 		im = obj.imageDataFromLastFrame(:,:,chan);
 		set(obj.figureHandles.channel(chan).hAx, 'CData', im) %Update image
 		hist(obj.figureHandles.channel(chan).histAx,im(:), 50); %Update histogram data
+	
+		%Make the histogram red
+		c=get([obj.figureHandles.channel(chan).histAx],'Children');
+		set(c, ...
+			'EdgeColor','None', ...
+			'FaceColor','r',...
+			'FaceAlpha',0.75)
+
 	end
 
 	%Keep the axes of the histogram looking nice
@@ -17,12 +25,6 @@ function plotLastFrameData(obj)
 		'Color', 'None', ...
 		'Box', 'Off');
 
-	%Make the histogram red
-	c=get([obj.figureHandles.channel(:).histAx],'Children');
-	set(c, ...
-		'EdgeColor','None', ...
-		'FaceColor','r',...
-		'FaceAlpha',0.75)
 
 	if strcmpi(obj.scanPattern,'bidi')
 		%Because we are trimming X in a nasty way
