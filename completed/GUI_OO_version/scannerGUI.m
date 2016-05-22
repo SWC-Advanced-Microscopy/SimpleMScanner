@@ -12,6 +12,10 @@ classdef scannerGUI < handle
 		scanner  %Stores the scanAndAcquire_OO object
 	end
 
+	properties (Hidden)
+		scanning=0
+	end
+
 	methods
 
 		function obj=scannerGUI(deviceID,varargin)
@@ -21,11 +25,10 @@ classdef scannerGUI < handle
 			if isempty(obj.scanner)
 				obj.scanner = scanAndAcquire_OO(deviceID,varargin{:});
 			end
+
 			%Build GUI and return handles
 			obj.gui = scannerGUI_fig;
-
-			%Call hMover_KeyPress on keypress events
-			set(obj.gui.hFig,'KeyPressFcn', {@hMover_KeyPress,obj})
+			movegui(obj.gui.hFig,'south')
 
 			%Attach callbacks to buttons is BT is available
 			if isempty(obj.scanner)
@@ -42,6 +45,7 @@ classdef scannerGUI < handle
 
 		function delete(obj)
 
+
 		end
 
 		function figClose(obj)
@@ -52,19 +56,28 @@ classdef scannerGUI < handle
 		end
 
 		function startStopScan(obj)
-			disp('START/STOP')
-			%TODO
+			if obj.scanning
+				obj.scanner.stopScan
+				obj.scanning=0;
+				set(obj.gui.startStopScan, ...
+					'Value', obj.scanning, ...
+					'ForeGroundColor', 'g', ...
+					'String', 'START SCAN');
+			else
+				%Open a figure in the top right of the screen
+				thisFig=figure;
+				movegui(thisFig,'northwest')
+
+				obj.scanner.startScan
+				obj.scanning=1;
+				set(obj.gui.startStopScan, ...
+					'Value', obj.scanning, ...
+					'ForeGroundColor', 'r', ...
+					'String', 'STOP SCAN');
+			end
 		end
 
 	end
 
 end
 
-
-function checkNumeric(src,~)
-	%Check that inputs to text boxes are numeric
-	str=get(src,'String');
-	if isempty(str2num(str))
-	    set(src,'string','0');
-	end
-end
