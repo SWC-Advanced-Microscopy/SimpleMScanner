@@ -17,7 +17,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 %
 % Instructions
 % Simply call the function with device ID of your NI acquisition board. 
-% Quit with ctrl-C.
+% Quit by closing the window showing the scanned image stream.
 %
 %
 % Inputs
@@ -219,7 +219,6 @@ end
 
 function stopAcq(s)
 	fprintf('Shutting down DAQ connection and zeroing scanners\n')
-	% This function is called when the user presses ctrl-C or if the acquisition crashes
 	s.stop; % Stop the acquisition
 
 	% Zero the scanners

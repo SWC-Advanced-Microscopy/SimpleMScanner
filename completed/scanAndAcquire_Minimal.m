@@ -11,7 +11,7 @@ function scanAndAcquire_Minimal(DeviceID)
 %
 % Instructions
 % Simply call the function with device ID of your NI acquisition board. 
-% Quit with ctrl-C.
+% Quit by closing the window showing the scanned image stream.
 %
 %
 % Inputs
@@ -54,9 +54,6 @@ function scanAndAcquire_Minimal(DeviceID)
 	s=daq.createSession('ni'); %Create a session using NI hardware
 	s.Rate = sampleRate;  % The sample rate is fixed, so changing it will alter the frame rate
 
-	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
-	tidyUp = onCleanup(@() stopAcq(s));
-
 	AI=s.addAnalogInputChannel(DeviceID, 'ai0', 'Voltage');	%Add an analog input channel for the PMT signal
 	AI.Range = [-AI_range,AI_range];
 
@@ -93,20 +90,19 @@ function scanAndAcquire_Minimal(DeviceID)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% SET UP THE FIGURE WINDOW THAT WILL DISPLAY THE DATA
-	clf
+	hFig=clf;
 	hIm=imagesc(zeros(imSize)); %keep a handle to the image plot object
 	imAx=gca;
 	colormap gray
-	set(imAx,'XTick',[], 'YTick',[], 'Position',[0,0,1,1])
+	set(imAx,'XTick',[], 'YTick',[], 'Position',[0,0,1,1]) %Fill the window
+	axis square
 
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% START!
+	set(hFig,'CloseRequestFcn', @(~,~) figCloseAndStopScan(s,hFig));
 	s.startBackground %start the acquisition in the background
-	while 1 %Block. User presses ctrl-C to to quit, this calls stopAcq
-		pause(0.1)
-	end
-
+	fprintf('Close window to stop scanning\n')
 
 
 	function plotData(src,event)
@@ -132,8 +128,16 @@ end %scanAndAcquire
 
 
 %-----------------------------------------------
+
+function figCloseAndStopScan(s,hFig)
+	%Runs on scan figure window close
+	delete(hFig)
+	stopAcq(s)
+	
+end
+
 function stopAcq(s)
-	% This function is called when the user presses ctrl-C or if the acquisition crashes
+	fprintf('Shutting down DAQ connection and zeroing scanners\n')
 	s.stop; % Stop the acquisition
 
 	% Zero the scanners
@@ -143,3 +147,4 @@ function stopAcq(s)
 
 	release(s);	% Release control of the board
 end %stopAcq
+
