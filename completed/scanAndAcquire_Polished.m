@@ -174,7 +174,9 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	% SET UP THE FIGURE WINDOW THAT WILL DISPLAY THE DATA
 
 	%We will plot the data on screen as they come in
-	clf
+	hFig=clf;
+
+
 	for ii=1:length(inputChans)
 		h(ii).imAx=subplot(1,length(inputChans),ii); %This axis will house the image
 		h(ii).hAx=imagesc(zeros(imSize)); %blank image
@@ -199,17 +201,10 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% START!
 
-	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
 	startTime=now;
-	tidyUp = onCleanup(@() stopAcq(s,startTime));
-
+	set(hFig,'CloseRequestFcn', @(~,~,~) figCloseAndStopScan(s,startTime,hFig));
 	s.startBackground %start the acquisition in the background
-
-	%Block. User presses ctrl-C to to quit, this calls stopAcq
-	while 1		
-		pause(0.1)
-	end
-
+	fprintf('Close window to stop scanning\n')
 
 	%-----------------------------------------------
 
@@ -240,6 +235,12 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 end %scanAndAcquire
 
+function figCloseAndStopScan(s,startTime,hFig)
+	%Runs on scan figure window close
+	delete(hFig)
+	stopAcq(s,startTime)
+	
+end
 
 function stopAcq(s,startTime)
 	fprintf('Acquired %0.1f seconds of data\n',(now-startTime)*60^2*24)
@@ -251,5 +252,4 @@ function stopAcq(s,startTime)
 
 	fprintf('Releasing NI hardware\n')
 	release(s);
-
 end %stopAcq

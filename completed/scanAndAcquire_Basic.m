@@ -28,7 +28,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 %
 %
 % Instructions
-% Simply call the function. Quit with ctrl-C.
+% Simply call the function. To stop scanning, close the figure window.
 %
 %
 % Examples
@@ -99,9 +99,6 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	s=daq.createSession('ni');
 	s.Rate = sampleRate;
 
-	%Define a cleanup object that will release the DAQ gracefully when the user presses ctrl-c
-	tidyUp = onCleanup(@() stopAcq(s));
-
 	%Add an analog input channel for the PMT signal
 	AI=s.addAnalogInputChannel(hardwareDeviceID, 'ai0', 'Voltage');
 	AI.Range = [-AI_range,AI_range];
@@ -168,7 +165,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	% SET UP THE FIGURE WINDOW THAT WILL DISPLAY THE DATA
 
 	%We will plot the data on screen as they come in, so make a blank image
-	clf
+	hFig=clf;
 	hIm=imagesc(zeros(imSize));
 	imAx=gca;
 	colormap gray
@@ -179,12 +176,10 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% START!
+	set(hFig,'CloseRequestFcn', @(~,~) figCloseAndStopScan(s,hFig));
 	s.startBackground %start the acquisition in the background
+	fprintf('Close window to stop scanning\n')
 
-	%Block. User presses ctrl-C to to quit, this calls stopAcq
-	while 1
-		pause(0.1)
-	end
 
 
 	function plotData(src,event)
@@ -214,7 +209,16 @@ end %scanAndAcquire
 
 
 %-----------------------------------------------
+
+function figCloseAndStopScan(s,hFig)
+	%Runs on scan figure window close
+	delete(hFig)
+	stopAcq(s)
+	
+end
+
 function stopAcq(s)
+	fprintf('Shutting down DAQ connection and zeroing scanners\n')
 	% This function is called when the user presses ctrl-C or if the acquisition crashes
 	s.stop; % Stop the acquisition
 
