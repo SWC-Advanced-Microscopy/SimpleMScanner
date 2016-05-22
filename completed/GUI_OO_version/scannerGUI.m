@@ -36,7 +36,7 @@ classdef scannerGUI < handle
 			end
 
     		set(obj.gui.startStopScan,'Callback',@(~,~) obj.startStopScan);
-
+    		set(obj.gui.bidi,'Callback',@(~,~) obj.bidiScan);
 
 		    set(obj.gui.hFig,'CloseRequestFcn', @obj.scannerGUIClose);
 
@@ -75,9 +75,19 @@ classdef scannerGUI < handle
 					'ForeGroundColor', 'r', ...
 					'String', 'STOP SCAN');
 			end
-		end
+		end	%close startStopScan
 
-	end
+		function bidiScan(obj)
+			if obj.gui.bidi.Value
+				obj.scanner.scanPattern='bidi';
+			else
+				obj.scanner.scanPattern='uni';
+			end
+			obj.scanner.restartScan
+		end %close bidiScan
 
-end
+	end %close methods
+
+
+end %close scannerGUI
 

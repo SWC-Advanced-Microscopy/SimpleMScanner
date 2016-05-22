@@ -169,23 +169,34 @@ classdef  scanAndAcquire_OO < handle
 
 		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 		% Short methods follow. Longer ones in standalone .m files
-		function startScan(obj)
+		function startScan(obj,setupFreshFigWindow)
+			if nargin<2
+				setupFreshFigWindow=true;
+			end
+
 			%TODO: check if running before carrying on
+			if setupFreshFigWindow
+				obj.setUpFigureWindow
+			end
+
 			obj.prepareQueueAndBuffer %TODO: test if data have been queued or just run this each time?
-			obj.setUpFigureWindow
+
 			obj.startTime=now;
 			obj.numFrames=0;
 			obj.hDAQ.startBackground %start the acquisition in the background
 		end %close startScan
 
-		function stopScan(obj,reportFramesAcquired)
+		function stopScan(obj,reportFramesAcquired,closeFigWindow)
 			if nargin<2
 				reportFramesAcquired=true;
+			end
+			if nargin<3
+				closeFigWindow=true;
 			end
 
 			obj.hDAQ.stop; 
 
-			if ~isempty(obj.figureHandles)
+			if ~isempty(obj.figureHandles) && closeFigWindow
 				obj.figureHandles.fig.delete %close figure
 				obj.figureHandles=[];
 			end
@@ -199,6 +210,16 @@ classdef  scanAndAcquire_OO < handle
 			end
 
 		end %close stop
+
+		function restartScan(obj)
+			% This function is used to stop and restart a scan. 
+			% Useful in cases when a scanning parameter is altered and we want this
+			% to take effect.
+
+			%TODO: check if scanning before running this 
+			obj.stopScan(0,0)
+			obj.startScan(0)
+		end
 
 		function varargout = fps(obj)
 			% Returns the number of frames per second.
