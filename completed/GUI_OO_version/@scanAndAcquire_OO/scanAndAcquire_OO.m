@@ -245,7 +245,11 @@ classdef  scanAndAcquire_OO < handle
 			obj.fps
 		end %close scanSettings
 
-
+		function figCloseAndStopScan(obj,~,~)
+			%Is called when the scan window closes. It stops the scan before closing the window
+			fprintf('Closing window and stopping scan')
+			obj.stopScan
+		end
 
 
 		% Setters for properties which require connected DAQ objects to be updated.
@@ -326,5 +330,3 @@ classdef  scanAndAcquire_OO < handle
 	end %close hidden methods
 
 end %close scanAndAcquire_OO
-
-

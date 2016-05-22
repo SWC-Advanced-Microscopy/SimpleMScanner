@@ -38,7 +38,7 @@ classdef scannerGUI < handle
     		set(obj.gui.startStopScan,'Callback',@(~,~) obj.startStopScan);
 
 
-		    set(obj.gui.hFig,'CloseRequestFcn', @(~,~) obj.figClose);
+		    set(obj.gui.hFig,'CloseRequestFcn', @obj.scannerGUIClose);
 
 		end
 
@@ -47,11 +47,12 @@ classdef scannerGUI < handle
 
 		end
 
-		function figClose(obj)
+		function scannerGUIClose(obj,~,~)
 			%Close figure then run destructor
+			if obj.scanning
+				obj.scanner.stopScan
+			end
 			delete(obj.gui.hFig)
-			obj.scanner.stopScan
-			obj.delete
 		end
 
 		function startStopScan(obj)

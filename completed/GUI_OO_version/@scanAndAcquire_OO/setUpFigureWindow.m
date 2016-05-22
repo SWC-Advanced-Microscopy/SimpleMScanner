@@ -2,6 +2,7 @@ function setUpFigureWindow(obj)
 	% Set up the figure window for displaying data as they stream in
 
 	obj.figureHandles.fig = clf;
+	set(obj.figureHandles.fig ,'CloseRequestFcn', @obj.figCloseAndStopScan );
 
 	%Create axes for each channel
 	for ii=1:length(obj.inputChans)
