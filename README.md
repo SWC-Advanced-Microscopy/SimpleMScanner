@@ -26,7 +26,7 @@ SimpleMScanner is not designed to be a complete application, but rather a teachi
 
 
 ## What you will need
-SimpleMScanner has been tested on MATLAB R2015a and requires the [Data Acquisition Toolbox](https://uk.mathworks.com/products/daq/) and the [Signal Processing Toolbox](http://www.mathworks.com/help/signal/index.html). 
+SimpleMScanner has been tested on MATLAB R2015a and requires the [Data Acquisition Toolbox](https://uk.mathworks.com/products/daq/). 
 You will also need a National Instruments device to coordinate scanning and data acquisition. 
 It has been tested on an NI PCI-6115, but likely other boards supported by the Data Acquisition Toolbox will also work. 
 Of course you will also need at least a set of scan mirrors, a scan lens, a tube lens, an objective, some form of detector and a laser. 
