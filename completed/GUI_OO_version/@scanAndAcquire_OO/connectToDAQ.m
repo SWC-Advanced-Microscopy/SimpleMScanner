@@ -28,7 +28,7 @@ function connectToDAQ(obj,deviceID)
 
 
 	%Add a listener to get data back after each frame
-	obj.getDataListener = addlistener(obj.hDAQ,'DataAvailable', @(src,event) obj.getDataFromDAQ(event)); 
+	obj.getDataListener = addlistener(obj.hDAQ, 'DataAvailable', @(src,event) obj.getDataFromDAQ(event)); 
 
 	%Add analog two output channels for scanners 0 is x and 1 is y
 	obj.hDAQ.addAnalogOutputChannel(obj.deviceID, obj.scannerChannels, obj.measurementType); 
