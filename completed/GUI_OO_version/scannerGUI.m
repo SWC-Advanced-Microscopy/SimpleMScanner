@@ -28,7 +28,6 @@ classdef scannerGUI < handle
 
 			%Build GUI and return handles
 			obj.gui = scannerGUI_fig;
-			movegui(obj.gui.hFig,'south')
 
 			%Attach callbacks to buttons is BT is available
 			if isempty(obj.scanner)
@@ -39,7 +38,7 @@ classdef scannerGUI < handle
     		set(obj.gui.startStopScan,'Callback',@(~,~) obj.startStopScan);
 
 
-		    set(obj.gui.hFig,'CloseRequestFcn', @(~,~) obj.figClose); %TODO: stop scanning, etc when the figure closes
+		    set(obj.gui.hFig,'CloseRequestFcn', @(~,~) obj.figClose);
 
 		end
 

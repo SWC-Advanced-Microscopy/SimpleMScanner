@@ -24,4 +24,14 @@ function setUpFigureWindow(obj)
 
 	colormap gray
 
+	%Expand figure window with number of channels
+	pos=get(obj.figureHandles.fig,'Position');
+	figSize = pos(3) * length(obj.inputChans);
+	screenSize = get(0,'ScreenSize');
+	if figSize > screenSize(3)
+		figSize = screenSize(3);
+	end
+	pos(3) = figSize;
+	set(obj.figureHandles.fig,'Position',pos);
+
 end %close setUpFigureWindow

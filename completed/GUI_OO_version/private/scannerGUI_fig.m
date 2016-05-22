@@ -7,7 +7,10 @@ function handles = scannerGUI_fig
 
 
 handles.hFig = figure;
-set(handles.hFig,'ToolBar','none','MenuBar','none','Name','Mover');
+set(handles.hFig, ...
+	'ToolBar', 'none', ...
+	'MenuBar', 'none', ...
+	'Name', 'scannerGUI');
 
 
 %Scan button
