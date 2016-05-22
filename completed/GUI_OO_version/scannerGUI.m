@@ -14,19 +14,21 @@ classdef scannerGUI < handle
 
 	methods
 
-		function obj=scannerGUI
+		function obj=scannerGUI(deviceID,varargin)
 
 			%Import BakingTray object from base workspace			
 			obj.scanner = getScannerObjectFromBaseWorkSpace; %function in "private" directory
-
+			if isempty(obj.scanner)
+				obj.scanner = scanAndAcquire_OO(deviceID,varargin{:});
+			end
 			%Build GUI and return handles
-			obj.gui = mover_fig;
+			obj.gui = scannerGUI_fig;
 
 			%Call hMover_KeyPress on keypress events
 			set(obj.gui.hFig,'KeyPressFcn', {@hMover_KeyPress,obj})
 
 			%Attach callbacks to buttons is BT is available
-			if isempty(obj.BT)
+			if isempty(obj.scanner)
 				fprintf('Not attaching button callbacks: BakingTray is not available')
 				return
 			end
@@ -34,9 +36,7 @@ classdef scannerGUI < handle
     		set(obj.gui.startStopScan,'Callback',@(~,~) obj.startStopScan);
 
 
-		    set(obj.gui.hFig,'CloseRequestFcn', @(~,~) obj.figClose); %Make sure the timer stops when the figure closes
-
-		    start(obj.timothy)
+		    set(obj.gui.hFig,'CloseRequestFcn', @(~,~) obj.figClose); %TODO: stop scanning, etc when the figure closes
 
 		end
 
@@ -47,10 +47,12 @@ classdef scannerGUI < handle
 		function figClose(obj)
 			%Close figure then run destructor
 			delete(obj.gui.hFig)
+			obj.scanner.stopScan
 			obj.delete
 		end
 
 		function startStopScan(obj)
+			disp('START/STOP')
 			%TODO
 		end
 
