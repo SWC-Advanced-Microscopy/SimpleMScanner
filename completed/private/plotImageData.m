@@ -80,7 +80,7 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay)
 				'FaceAlpha',0.75)
 		end
 
-		% - -  - -  - -  - -  - -  - -  - -  - -  - -  
+		% - - - - - - - - - - - - - - - - - -  
 		%Optionally write data to disk
 		if ~isempty(saveFname) 
 			if length(h)>1
@@ -95,7 +95,7 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay)
 	    				'WriteMode', 'Append',....
 	    				'Description',sprintf('%f',timeStamp));
 		end
-		% - -  - -  - -  - -  - -  - -  - -  - -  - -  
+		% - - - - - - - - - - - - - - - - - -  
 
 
 

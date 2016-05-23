@@ -73,22 +73,6 @@ classdef  scanAndAcquire_OO < handle
 	%
 	% * Examples
 	% ONE
-	% The following example shows how to list the available DAQ devices, then create an
-	% instance of the object and start and stop scanning.
-	%
-	%
-	% >> daq.getDevices
-	%
-	% ans = 
-	%
-	% Data acquisition devices:
-	%
-	% index Vendor Device ID          Description          
-	% ----- ------ --------- ------------------------------
-	% 1     ni     Dev1      National Instruments PCI-6115
-	% 2     ni     Dev2      National Instruments PCIe-6321
-	% 3     ni     Dev3      National Instruments PCI-6229
-	%
 	% >> S = scanAndAcquire_OO('Dev1');
 	% >> S.prepareQueueAndBuffer
 	% % Acquire 10 seconds of data
