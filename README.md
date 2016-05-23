@@ -56,10 +56,15 @@ For educational purposes, it is possible to use a laser pointer and a photo-diod
 
 * **scanAndAcquire_OO** - The same features as scanAndAcquire_Polished but in an object-oriented interface.
 
+* **scannerGUI** - A simple GUI wrapper for scanAndAcquire_OO. Currently it only:
+  1. Starts/stops scanning
+  2. Switches back and forth between unidirectional and bidirectional modes. 
+  3. Allows update of the bidirectional phase delay
+  4. Saving that can be toggled with a checkbox
 
 * The **buildingBlocks** folder contains code snippets to help teach the individual concepts from the above without providing a solution to the whole problem. 
 
-* The repository also contains functions for loading saved TIFF stacks from disk, etc.
+* The repository also contains a folder of utility functions. Currently just one for loading the saved TIFF stacks from disk.
 
 
 # Disclaimer
