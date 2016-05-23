@@ -2,7 +2,7 @@ classdef  scanAndAcquire_OO < handle
 
 	% Simple class for acquiring data with a 2-photon microscope
 	%
-	% scanAndAcquire(deviceID,'param1',val1,'param2',val2,...)
+	% scanAndAcquire_OO(deviceID,'param1',val1,'param2',val2,...)
 	%
 	%
 	% * Purpose
@@ -154,6 +154,9 @@ classdef  scanAndAcquire_OO < handle
 		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 		%CONSTRUCTOR
 		function obj = scanAndAcquire_OO(hardwareDeviceID,varargin)
+
+			% This method is known as a "constructor". It has the same name as the class and is run
+			% when an instance of the object is created. 
 			if ~ischar(hardwareDeviceID)
 				fprintf('hardwareDeviceID should be a string\n')
 				return

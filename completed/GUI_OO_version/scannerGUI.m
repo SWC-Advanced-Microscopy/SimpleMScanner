@@ -1,20 +1,47 @@
 classdef scannerGUI < handle
 
-% The scannerGUI class is used to build a GUI that controls
-% scanAndAcquire_OO
+% The scannerGUI class is used to build a GUI that controls scanAndAcquire_OO
 %
-% simply run "scannerGUI" to start.
-% if scanAndAcquire_OO has not already been started, scannerGUI will do so
+% scannerGUI(deviceID,'param1',val1,'param2',val2,...)
+% 
+% Purpose
+% scannerGUI is a GUI wrapper for scanAndAcquire_OO. It is not complete. 
+% The purpose of scannerGUI is to show how a graphical interface and be written
+% around an existing object in a modular manner. In this case there are three modules:
+% 1) The GUI (figure window) itself that is built by scannerGUI_fig
+% 2) scanAndAcquire_OO that controls the scanner and shows the images on screen.
+% 3) This scannerGUI class that links the UI elements in the figure with methods 
+%    and properties in the scanAndAcquire_OO object. 
+%
+% Usage
+% There are two ways of starting scannerGUI. One is to first create an instance of 
+% scanAndAcquire_OO and then to call scannerGUI. In this scenario, scannerGUI finds
+% the scanAndAcquire_OO object in the base workspace and connects to it:
+% >> S=scanAndAcquire_OO('Dev1');
+% >> scannerGUI;
+%
+% The other scenario is to call scannerGUI using the same input arguments as would for 
+% scanAndAcquire_OO. If you do this, an instance of scanAndAcquire_OO is created and
+% then the GUI loads:
+% >> S = scannerGUI('Dev1');
+%
+%
+% Rob Campbell - Basel 2016
+%
+% Also see:
+% scannerGUI_fig, scanAndAcquire_OO
 
 
-	properties
+	properties % These are the properties ("variables") associated with the scannerGUI class
 		gui 	 %Stores the GUI handles
 		scanner  %Stores the scanAndAcquire_OO object
 	end
 
 
-	methods
+	methods % Here are the methods ("functions") available to the user
 
+		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+		%CONSTRUCTOR
 		function obj=scannerGUI(deviceID,varargin)
 
 			%Import BakingTray object from base workspace			
@@ -44,12 +71,22 @@ classdef scannerGUI < handle
 
 
 		end
+		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+		%DESTRUCTOR
+		function delete(obj)
+			%NOTHING HERE YET
+		end %close destructor
 
 		function scannerGUIClose(obj,~,~)
 			%Close figure then run destructor
 			obj.scanner.stopScan
 			delete(obj.gui.hFig)
 		end
+
+
+
+		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+		%The following are callback functions that are linked to UI elements
 
 		function startStopScan(obj)
 			isRunning = obj.scanner.hDAQ.IsRunning;

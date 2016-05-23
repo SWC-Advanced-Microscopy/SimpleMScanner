@@ -1,12 +1,17 @@
-function S = getScannerObjectFromBaseWorkSpace(className)
+function S = getScannerObjectFromBaseWorkSpace(className,verbose)
 % Returns the scanAndAcquire object from the base workspace regardless of its name
+%
+% function S = getScannerObjectFromBaseWorkSpace(className,verbose)
 %
 % Purpose
 % Used by methods or objects that want to import scanAndAcquire_OO without 
 % requiring it to be passed as an input argument.
 %
-% Inputs
-% None
+% Inputs (optional)
+% className - a string defining the name of the class to search for. If missig
+% 			 of empty we search for the string 'scanAndAcquire_OO'
+% verbose - optional bool (true by default). If true print status of object 
+%			search to screen.
 %
 % Outputs
 % S - the scanAndAcquire_OO object. Returns empty if it could not be found. 

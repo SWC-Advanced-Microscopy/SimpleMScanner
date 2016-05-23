@@ -3,7 +3,18 @@ function handles = scannerGUI_fig
 %	
 % function handles = scannerGUI_fig
 %
-% 
+%
+% Inputs
+%  None
+%
+% Outputs
+%  handles - a structure of handles associated with the UI elements in the GUI
+%
+% Rob Campbell - Basel 2016
+%
+%
+% Also see:
+% scannerGUI, scanAndAcquire_OO
 
 
 handles.hFig = figure;
@@ -13,6 +24,9 @@ set(handles.hFig, ...
 	'Name', 'scannerGUI');
 handles.hFig.Position(4)=150;
 
+
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 %Scan button
 handles.startStopScan = uicontrol(...
     'Parent', handles.hFig, ...
@@ -24,6 +38,8 @@ handles.startStopScan = uicontrol(...
     'String', 'START SCAN');
 
 
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 %Bidi checkbox and phase delay
 handles.bidiFrame = uicontrol(...
     'Parent', handles.hFig, ...
@@ -56,6 +72,9 @@ handles.bidiPhase = uicontrol(...
     'BackgroundColor',[1,1,1]*0.75, ...
     'String', '');
 
+
+
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 %Save fname
 handles.saveFrame = uicontrol(...
     'Parent', handles.hFig, ...
@@ -71,7 +90,7 @@ handles.save = uicontrol(...
     'Units', 'pixels', ...
     'FontSize', 10, ...
     'FontWeight', 'Bold', ...
-    'Position', [294 70  60   21], ...
+    'Position', [294 70  120   21], ...
     'Style','CheckBox', ...
     'String', 'Save');
 
