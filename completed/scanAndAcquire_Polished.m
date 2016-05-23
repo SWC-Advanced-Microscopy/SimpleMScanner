@@ -1,6 +1,8 @@
 function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % Simple function for acquiring data with a 2-photon microscope
 %
+% scanAndAcquire(deviceID,'param1',val1,'param2',val2,...)
+%
 % Purpose
 % A relatively complete function for simple two-photon scanning
 %

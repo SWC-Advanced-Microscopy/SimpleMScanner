@@ -12,9 +12,6 @@ classdef scannerGUI < handle
 		scanner  %Stores the scanAndAcquire_OO object
 	end
 
-	properties (Hidden)
-		scanning=0
-	end
 
 	methods
 
@@ -23,6 +20,7 @@ classdef scannerGUI < handle
 			%Import BakingTray object from base workspace			
 			obj.scanner = getScannerObjectFromBaseWorkSpace; %function in "private" directory
 			if isempty(obj.scanner)
+				fprintf('Creating instance of scanAndAcquire_OO\n')
 				obj.scanner = scanAndAcquire_OO(deviceID,varargin{:});
 			end
 
@@ -49,35 +47,33 @@ classdef scannerGUI < handle
 
 		function scannerGUIClose(obj,~,~)
 			%Close figure then run destructor
-			if obj.scanning
-				obj.scanner.stopScan
-			end
+			obj.scanner.stopScan
 			delete(obj.gui.hFig)
 		end
 
 		function startStopScan(obj)
-			if obj.scanning
+			isRunning = obj.scanner.hDAQ.IsRunning;
+			if isRunning
 				obj.scanner.stopScan
-				obj.scanning=0;
+
 				set(obj.gui.startStopScan, ...
-					'Value', obj.scanning, ...
+					'Value', isRunning, ...
 					'ForeGroundColor', 'g', ...
 					'String', 'START SCAN');
 			else
 				%Open a figure in the top right of the screen
 				thisFig=figure;
 				movegui(thisFig,'northwest')
-
 				obj.scanner.startScan
-				obj.scanning=1;
 				set(obj.gui.startStopScan, ...
-					'Value', obj.scanning, ...
+					'Value', isRunning, ...
 					'ForeGroundColor', 'r', ...
 					'String', 'STOP SCAN');
 			end
 		end	%close startStopScan
 
 		function bidiScan(obj)
+
 			if obj.gui.bidi.Value
 				obj.scanner.scanPattern='bidi';
 			else

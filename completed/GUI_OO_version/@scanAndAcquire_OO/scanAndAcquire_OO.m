@@ -2,16 +2,57 @@ classdef  scanAndAcquire_OO < handle
 
 	% Simple class for acquiring data with a 2-photon microscope
 	%
-	% Details
+	% scanAndAcquire(deviceID,'param1',val1,'param2',val2,...)
+	%
+	%
+	% * Purpose
+	% scanAndAcquire_OO is an object-oriented version of scanAndAcquire_Polished.
+	% With this class you can create "scanAndAcquire_OO" OBJECT in the base workspace. 
+	% An OBJECT has PROPERTIES and METHODS. In this case, the PROPERTIES define the scanning
+	% parameters. e.g. the image size, the sample rate, where to save the data, etc. The 
+	% METHODS are functions that operate on those properties. In this case the METHODS do
+	% things like build the scan waveforms, start scanning, stop scanning, etc. 
+	%
+	% The object-oriented approach has some advantages over the procedural approach for 
+	% tasks involving things like data acquisition and GUIs. The principle advantages
+	% are that:
+	% a) It's easier to interact with an object at the command when doing DAQ-related
+	%   tasks. 
+	% b) It's very easy to integrate an object into a GUI.
+	%   
+	% For instance, in the procedural approach (e.g. scanAndAcquire_Polished) you call the 
+	% function with the desired scanning paramaters, then a connection to the acquisition 
+	% hardware is made and the scanning begins. In the case of the functions made here, 
+	% scanning ends when you close the image window. With the object-oriented approach, you
+	% make an instance of the object:
+	% >> S = scanAndAcquire_OO('dev1');
+	%
+	% Then you can start scanning like this:
+	% >> S.startScan
+	%
+	% Stop scanning like this:
+	% >> S.stopScan
+	%
+	% Change some settings and restart scanning:
+	% >> S.imSize = 512;
+	% >> S.startScan
+	%
+	% etc...
+	%
+	% For incorporation of this class into a GUI see scannerGUI.m
+	%
+	% 
+	% * Details
 	% The X mirror should be on AO-0
 	% The Y mirror should be on AO-1
-	% No Pockels blanking and all the waveform is used.
 	%
-	% Inputs (required)
+	%
+	%
+	% * Inputs (required)
 	% hardwareDeviceID - string defining the ID of the DAQ device 
 	%					 see daq.getDevices for finding the ID of your device.
 	%
-	% Inputs (optional, supplied as param/value pairs)
+	% * Inputs (optional, supplied as param/value pairs)
 	% 'inputChans' - A vector defining which input channels will be used to acquire data 
 	%  				[0 by default, meaning channel 0 only is used to acquire data]
 	% 'saveFname'  - A string defining the relative or absolute path of a file to which data should be written. 
@@ -30,7 +71,7 @@ classdef  scanAndAcquire_OO < handle
 	% 'enableHist'   - A boolean. True by default. If true, overlays an intensity histogram on top of the image.
 	%
 	%
-	% Examples
+	% * Examples
 	% ONE
 	% The following example shows how to list the available DAQ devices, then create an
 	% instance of the object and start and stop scanning.
@@ -170,11 +211,16 @@ classdef  scanAndAcquire_OO < handle
 		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 		% Short methods follow. Longer ones in standalone .m files
 		function startScan(obj,setupFreshFigWindow)
+			% Start scanning 
+			%Check if running before carrying on
+			if obj.hDAQ.IsRunning
+				return
+			end
+
 			if nargin<2
 				setupFreshFigWindow=true;
 			end
 
-			%TODO: check if running before carrying on
 			if setupFreshFigWindow
 				obj.setUpFigureWindow
 			end
@@ -187,6 +233,11 @@ classdef  scanAndAcquire_OO < handle
 		end %close startScan
 
 		function stopScan(obj,reportFramesAcquired,closeFigWindow)
+			%Check if now running before carrying on
+			if ~obj.hDAQ.IsRunning
+				return
+			end
+
 			if nargin<2
 				reportFramesAcquired=true;
 			end
@@ -215,10 +266,10 @@ classdef  scanAndAcquire_OO < handle
 			% This function is used to stop and restart a scan. 
 			% Useful in cases when a scanning parameter is altered and we want this
 			% to take effect.
-
-			%TODO: check if scanning before running this 
-			obj.stopScan(0,0)
-			obj.startScan(0)
+			if obj.hDAQ.IsRunning
+				obj.stopScan(0,0)
+				obj.startScan(0)
+			end
 		end
 
 		function varargout = fps(obj)
