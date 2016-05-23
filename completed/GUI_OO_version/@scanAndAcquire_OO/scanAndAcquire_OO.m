@@ -203,7 +203,7 @@ classdef  scanAndAcquire_OO < handle
 		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 		%DESTRUCTOR
 		function delete(obj)
-			obj.stopAndDisconnectDAQ(false); %stop and don't report the number of acquired frames
+			obj.stopAndDisconnectDAQ; %stop and don't report the number of acquired frames
 			delete(obj.getDataListener)
 			delete(obj.queueWaveformsListener)
 		end %close destructor
