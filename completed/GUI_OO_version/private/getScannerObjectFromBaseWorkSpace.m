@@ -19,8 +19,12 @@ function S = getScannerObjectFromBaseWorkSpace(className,verbose)
 %
 % Rob Campbell - Basel 2016
 
-if nargin<1
+if nargin<1  || isempty(className)
 	className='scanAndAcquire_OO';
+end
+
+if nargin<2 || isempty(verbose)
+	verbose=true;
 end
 
 W=evalin('base','whos');
@@ -32,14 +36,21 @@ varClasses = {W.class};
 
 ind=strmatch(className,varClasses);
 
+
 if isempty(ind)
-	fprintf('No %s object in base workspace\n',className)
+	%Return empty if no object was found
+	if verbose
+		fprintf('No %s object in base workspace\n',className)
+	end
 	S=[];
 	return
 end
 
 if length(ind)>1
-	fprintf('More than one %s object in base workspace\n',className)
+	%Return empty if multiple objects were found
+	if verbose
+		fprintf('More than one %s object in base workspace\n',className)
+	end
 	S=[];
 	return
 end
