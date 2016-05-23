@@ -51,16 +51,21 @@ For educational purposes, it is possible to use a laser pointer and a photo-diod
   3. Acquisition of multiple channels
   4. Generation of scan patterns and image display are handled by external functions
   5. Adds an optional histogram overlay on top of the scan images
-  6. Saving to disk with time-stamps in TIFF info
+  6. Saving to disk as a TIFF stack. Time-stamps added to the info. A function to read back the data is provided.
   7. Bidirectional scanning
 
-* **scanAndAcquire_OO** - The same features as scanAndAcquire_Polished but in an object-oriented interface.
+* **scanAndAcquire_OO** - The same features as scanAndAcquire_Polished but in an object-oriented interface. 
+The purpose of this it to contract procedural with object-oriented code.
 
-* **scannerGUI** - A simple GUI wrapper for scanAndAcquire_OO. Currently it only:
+* **scannerGUI** - A simple GUI wrapper class for scanAndAcquire_OO. 
+This showcases some of the advantages of using object-oriented techniques for data acquisition and GUI-building. 
+The scannerGUI class is not supposed to be a complete GUI application. 
+Its purpose is to demonstrate how easy it is to wrap an object with a GUI. 
+Currently the scannerGUI provides the following features:
   1. Starts/stops scanning
-  2. Switches back and forth between unidirectional and bidirectional modes. 
-  3. Allows update of the bidirectional phase delay
-  4. Saving that can be toggled with a checkbox
+  2. Switches back and forth between unidirectional and bidirectional modes 
+  3. Allows update of the bidirectional phase delay whilst scanning
+  4. Saving to disk 
 
 * The **buildingBlocks** folder contains code snippets to help teach the individual concepts from the above without providing a solution to the whole problem. 
 

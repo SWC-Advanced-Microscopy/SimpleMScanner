@@ -118,7 +118,7 @@ classdef  scanAndAcquire_OO < handle
 
 		%Data from the last frame are stored here:
 		imageDataFromLastFrame %an array of size: imageRows x imageCols x numChannels
-	end
+	end %close properties
 
 
 	properties (Hidden)
@@ -141,13 +141,18 @@ classdef  scanAndAcquire_OO < handle
 		AI_range = 2 			% Digitise over +/- this range
 		maxScannerVoltage = 10 
 		minSecondsOfBufferedData = 0.25 %Each time fill the output buffer with at least this many seconds of data to avoid buffer under-runs
-	end
+	end %properties (Hidden)
 
 	properties (Access=private)
 		sessionType = 'ni' 		% We will work with NI hardware
 		measurementType = 'Voltage' % We will acquire voltage data 
 		scannerChannels = 0:1	% These are the AO channels to which the scanners are connected [x,y]
-	end
+	end %close properties (Access=private)
+
+
+	events
+		frameAcquired %Listener to signal to other code that a frame has been acquired (see getDataFromDAQ.m)
+	end %close events
 
 	methods
 
