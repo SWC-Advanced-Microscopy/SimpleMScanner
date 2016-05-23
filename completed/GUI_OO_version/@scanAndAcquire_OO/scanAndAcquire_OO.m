@@ -322,8 +322,9 @@ classdef  scanAndAcquire_OO < handle
 
 		function figCloseAndStopScan(obj,~,~)
 			%Is called when the scan window closes. It stops the scan before closing the window
-			fprintf('Closing window and stopping scan')
+			fprintf('Closing window and stopping scan\n')
 			obj.stopScan
+			delete(obj.figureHandles.fig)
 		end
 
 
