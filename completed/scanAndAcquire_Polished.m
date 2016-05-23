@@ -3,13 +3,16 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 %
 % scanAndAcquire(deviceID,'param1',val1,'param2',val2,...)
 %
+%
 % Purpose
 % A relatively complete function for simple two-photon scanning
+%
 %
 % Details
 % The X mirror should be on AO-0
 % The Y mirror should be on AO-1
 % No Pockels blanking and all the waveform is used.
+%
 %
 % Inputs (required)
 % hardwareDeviceID - string defining the ID of the DAQ device 
@@ -58,6 +61,10 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % TWO
 % acquire data on channels 0 and 2
 % scanAndAcquire('Dev1','inputChans',[0,2])
+%
+%
+% Requirements
+% Data Acquisition Toolbox
 %
 % Rob Campbell - Basel 2015
 
@@ -114,11 +121,8 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% CONNECT TO THE HARDWARE
-
-	%Create a session (using NI hardware by default)
 	s=daq.createSession('ni');
 	s.Rate = sampleRate;
-
 
 	%Add one or more analog input channels for the PMT signals
 	AI=s.addAnalogInputChannel(hardwareDeviceID, inputChans, 'Voltage'); 
@@ -149,6 +153,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	end
 	fprintf('\n')
 
+
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
 	fps = s.Rate/length(dataToPlay);
@@ -165,18 +170,15 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	s.queueOutputData(dataToPlay); %queue the first frame
 
 	%Pull in the data when each frame has been acquired
-	addlistener(s,'DataAvailable', @plotData); 	%Add a listener to get data back after each frame
 	s.NotifyWhenDataAvailableExceeds=length(dataToPlay)/nFramesToQueue; %when to read back
+	addlistener(s,'DataAvailable', @plotData); 	%Add a listener to get data back after each frame
 
 
 
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% SET UP THE FIGURE WINDOW THAT WILL DISPLAY THE DATA
-
-	%We will plot the data on screen as they come in
 	hFig=clf;
-
 
 	for ii=1:length(inputChans)
 		h(ii).imAx=subplot(1,length(inputChans),ii); %This axis will house the image
@@ -196,26 +198,23 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%Tweak settings on axes and figure elemenents
 	set([h(:).imAx], 'XTick',[], 'YTick', [], 'CLim',[0,AI_range]) %note: we store the AI_range here
-
 	colormap gray
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% START!
-
 	startTime=now;
 	set(hFig,'CloseRequestFcn', @(~,~,~) figCloseAndStopScan(s,startTime,hFig));
+
 	s.startBackground %start the acquisition in the background
 	fprintf('Close window to stop scanning\n')
 
+
+
 	%-----------------------------------------------
-
-
 	function plotData(~,event)
-
 		imData=event.Data;
 
 		if size(imData,1)<=1
-			fprintf('No data\n')
 			return
 		end
 
@@ -230,20 +229,16 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 		%External function call to function in private directory
 		plotImageData(downSampled,h,saveFname,bidiPhase)
+ 	end %close plotData
 
- 	end %plotData
+
+end %close scanAndAcquire
 
 
-end %scanAndAcquire
 
+%-----------------------------------------------
 function figCloseAndStopScan(s,startTime,hFig)
 	%Runs on scan figure window close
-	delete(hFig)
-	stopAcq(s,startTime)
-	
-end
-
-function stopAcq(s,startTime)
 	fprintf('Acquired %0.1f seconds of data\n',(now-startTime)*60^2*24)
 	fprintf('Zeroing AO channels\n')
 	s.stop;
@@ -253,4 +248,5 @@ function stopAcq(s,startTime)
 
 	fprintf('Releasing NI hardware\n')
 	release(s);
-end %stopAcq
+	delete(hFig)
+end %close figCloseAndStopScan
