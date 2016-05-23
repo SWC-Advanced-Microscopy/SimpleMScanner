@@ -127,8 +127,6 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 		AI(ii).Range = [-AI_range,AI_range]; %very likely this is fine to leave hard-coded like this.
 	end
 
-	%Add a listener to get data back after each frame
-	addlistener(s,'DataAvailable', @plotData); 
 
 	%Add analog two output channels for scanners 0 is x and 1 is y
 	s.addAnalogOutputChannel(hardwareDeviceID,0:1,'Voltage'); 
@@ -167,6 +165,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	s.queueOutputData(dataToPlay); %queue the first frame
 
 	%Pull in the data when each frame has been acquired
+	addlistener(s,'DataAvailable', @plotData); 	%Add a listener to get data back after each frame
 	s.NotifyWhenDataAvailableExceeds=length(dataToPlay)/nFramesToQueue; %when to read back
 
 

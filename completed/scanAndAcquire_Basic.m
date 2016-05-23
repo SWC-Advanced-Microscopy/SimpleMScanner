@@ -103,11 +103,6 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	AI=s.addAnalogInputChannel(hardwareDeviceID, 'ai0', 'Voltage');
 	AI.Range = [-AI_range,AI_range];
 
-
-	%Add a listener to get data back from this channel
-	addlistener(s,'DataAvailable', @plotData); 
-
-
 	%Add analog two output channels for scanners 0 is x and 1 is y
 	s.addAnalogOutputChannel(hardwareDeviceID,0:1,'Voltage');
 
@@ -156,6 +151,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	s.queueOutputData(dataToPlay); %queue the first frame
 
 	%Pull in the data when the frame has been acquired
+	addlistener(s,'DataAvailable', @plotData); 	%Add a listener to get data back from this channel
 	s.NotifyWhenDataAvailableExceeds=size(dataToPlay,1); %when to read back
 
 

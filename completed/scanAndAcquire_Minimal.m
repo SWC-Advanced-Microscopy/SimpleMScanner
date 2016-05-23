@@ -57,7 +57,6 @@ function scanAndAcquire_Minimal(DeviceID)
 	AI=s.addAnalogInputChannel(DeviceID, 'ai0', 'Voltage');	%Add an analog input channel for the PMT signal
 	AI.Range = [-AI_range,AI_range];
 
-	addlistener(s,'DataAvailable', @plotData); 	% Add a listener to get data back from this channel
 	s.addAnalogOutputChannel(DeviceID,0:1,'Voltage'); % Add analog two output channels for scanners:  0 is x and 1 is y
 
 
@@ -85,6 +84,9 @@ function scanAndAcquire_Minimal(DeviceID)
 	s.IsContinuous = true; %needed to provide continuous behavior
 	s.queueOutputData(dataToPlay); %queue the first frame
 	
+
+	%Determine when to read in the data
+	addlistener(s,'DataAvailable', @plotData); 	% Add a listener to get data back from this channel
 	s.NotifyWhenDataAvailableExceeds=size(dataToPlay,1); %Pull in the data when the frame has been acquired
 
 
@@ -105,8 +107,16 @@ function scanAndAcquire_Minimal(DeviceID)
 	fprintf('Close window to stop scanning\n')
 
 
+
+
+	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+	% Nested functions follow
 	function plotData(src,event)
-		%This function is called every time a frame is acquired
+		% This callback function is run each time one frame's worth of data have been acquired
+		% It reads the data off the board and plots to screen.
+		% For convenience we nest this callback in the main function body. It therefore
+		% shares the same scope as the main function
+
 		x=event.Data; % x is a vector (the NI card obviously doesn't know we have a square image)
 
 		if length(x)<=1 %sometimes there are no data. If so, bail out.
@@ -128,7 +138,8 @@ end %scanAndAcquire
 
 
 %-----------------------------------------------
-
+% The following functions are not nested within the main function body and so their
+% contents do not share the same scope as the main function.
 function figCloseAndStopScan(s,hFig)
 	%Runs on scan figure window close
 	delete(hFig)

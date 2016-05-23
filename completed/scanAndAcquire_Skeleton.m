@@ -30,43 +30,50 @@ function scanAndAcquire_Skeleton(DeviceID)
 
 	%Add an analog input channel for the PMT signal and scale it appropriately
 
-	%Set up a listener to pull in data when they are available
-	addlistener(s,'DataAvailable', @plotData); 	% Add a listener to get data back from this channel
 
-
-	%define analog output channels
-	s.addAnalogOutputChannel(DeviceID,0:1,'Voltage'); % Add analog two output channels for scanners:  0 is x and 1 is y
-
-
+	% Add analog two output channels for scanners:  0 is x and 1 is y
+	
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% BUILD THE GALVO WAVEFORMS
-	yWaveform = linspace(galvoAmp,-galvoAmp,imSize^2); % Y waveform is:
 
-	xWaveform = linspace(-galvoAmp, galvoAmp, imSize); % One line of X
-	xWaveform = repmat(xWaveform,1,length(yWaveform)/length(xWaveform)); % All the X lines
+	% Use the galvo amplitude and the image size to build the x and y waveforms. 
+	% For now we will start with a uni-directional raster scan. i.e. acquire data 
+	% along the fast (x) axis going from left to right, then flick back to the start
+	% (left side) to acquire the next line.
 
-	dataToPlay = [xWaveform(:),yWaveform(:)]; %Assemble the two waveforms into an N-by-2 array
+	yWaveform = [];  
+
+	xWaveform = []; 
+
+	% Assemble the two waveforms into an N-by-2 array that can be sent to  the 
+	% DAQ device output buffer. You might find it helpful to plot this when developing
+	% the code.
+	dataToPlay = [xWaveform(:),yWaveform(:)]; 
 
 
 
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
-	fps = sampleRate/length(dataToPlay);
-	fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n',imSize,imSize,fps)
 
-	%The output buffer is re-filled when it becomes half empty
-	s.NotifyWhenScansQueuedBelow = round(length(yWaveform)*0.5); 
+	% You will need to play the waveforms continuously. This achieved
+	% by topping up the output buffer as it approaches becoming empty
 
-	%This listener tops up the output buffer
-	addlistener(s,'DataRequired', @(src,event) src.queueOutputData(dataToPlay));
+	% use the "NotifyWhenScansQueuedBelow" property to specify when to top up the buffer
 
-	s.IsContinuous = true; %needed to provide continuous behavior
-	s.queueOutputData(dataToPlay); %queue the first frame
+	% Create a listener (addlistener) on the 'DataRequired' notify event to queue data to the output buffer
+	% use the queueOutputData method to send data to the device
+
+	%make the IsContinuous property true
+
+	%queue your first batch of output data (queueOutputData)
 	
-	s.NotifyWhenDataAvailableExceeds=size(dataToPlay,1); %Pull in the data when the frame has been acquired
 
+	%Set up a listener on 'DataAvailable' to run plotData. This will pull in data and process it after each frame
+	addlistener(s,'DataAvailable', @plotData); 	% Add a listener to get data back from this channel
+	
+	%set the NotifyWhenDataAvailableExceeds property to determine when you will pull in data
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% SET UP THE FIGURE WINDOW THAT WILL DISPLAY THE DATA
@@ -82,24 +89,24 @@ function scanAndAcquire_Skeleton(DeviceID)
 
 
 
-
+	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+	% Nested functions follow
 	function plotData(src,event)
-		%For convenience we nest this callback in the main function body. It therefore
-		%shares the same scope as the main function
-		
-		%This function is called every time a frame is acquired
+		% This will be a callback function that will run each time one frame's worth
+		% of data have been acquired. 
+		% For convenience we nest this callback in the main function body. It therefore
+		% shares the same scope as the main function
+
+		% Get data off the board
 		x=event.Data; % x is a vector (the NI card obviously doesn't know we have a square image)
 
-		if length(x)<=1 %sometimes there are no data. If so, bail out.
-			return
-		end
+		%Error checking to ensure we have data
 
-		im = reshape(x,imSize,imSize); %Reshape the data vector into a square image
-		im = rot90(im); %So the fast axis (x) is show along the image rows
-		im = -im; %because the data are negative-going
+		%Data are a vector so reshape to form a square image
 
-		set(hIm,'CData',im);
-		set(imAx,'CLim',[0,AI_range]);
+
+		%Plot (e.g. by setting the CData property)
+
  	end %plotData
 
 
@@ -109,7 +116,8 @@ end %scanAndAcquire
 
 
 %-----------------------------------------------
-% The following functions are not nested within the main function body
+% The following functions are not nested within the main function body and so their
+% contents do not share the same scope as the main function.
 function figCloseAndStopScan(s,hFig)
 	%Runs on scan figure window close
 	delete(hFig) %closes the figure
