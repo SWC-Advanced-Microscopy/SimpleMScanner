@@ -46,31 +46,51 @@ classdef scannerGUI < handle
 
 			%Import BakingTray object from base workspace			
 			obj.scanner = getScannerObjectFromBaseWorkSpace; %function in "private" directory
-			if isempty(obj.scanner)
+
+			if isempty(obj.scanner) && nargin>0
 				fprintf('Creating instance of scanAndAcquire_OO\n')
 				obj.scanner = scanAndAcquire_OO(deviceID,varargin{:});
 			end
 
-			%Build GUI and return handles
-			obj.gui = scannerGUI_fig;
-
-			%Attach callbacks to buttons is BT is available
-			if isempty(obj.scanner)
-				fprintf('Not attaching button callbacks: BakingTray is not available')
-				return
+			if isempty(obj.scanner) || ~isvalid(obj.scanner)
+				error('FAILED TO CONNECT TO SCANNER')
 			end
 
+
+			obj.gui = scannerGUI_fig; %Build GUI and return handles
+
+
+			% Write the current save file name (if any) and bidirectional phase delay
+			% into the checkboxes.
+			obj.gui.bidiPhase.String = obj.scanner.bidiPhase;
+			if strcmpi(obj.scanner.scanPattern,'bidi')
+				obj.gui.bidi.Value=true;
+				obj.gui.bidiPhase.Enable='on';
+			else
+				obj.gui.bidi.Value=false;
+				obj.gui.bidiPhase.Enable='off';
+			end
+
+			obj.gui.saveFname.String = obj.scanner.saveFname;
+			if isempty(obj.gui.saveFname.String)
+				obj.gui.save.Enable='off';
+			else
+				obj.gui.save.Enable='on';
+			end
+
+			%Attach callback functions to UI interactions
     		set(obj.gui.startStopScan,'Callback',@(~,~) obj.startStopScan);
     		set(obj.gui.bidi,'Callback',@(~,~) obj.bidiScan);
+    		set(obj.gui.bidiPhase,'Callback',@(~,~) obj.bidiPhaseUpdate);
+    		set(obj.gui.saveFname,'Callback',@(~,~) obj.saveFnameUpdate);
 
+    		%Run method scannerGUIClose if the GUI's figure window is closed by the user
 		    set(obj.gui.hFig,'CloseRequestFcn', @obj.scannerGUIClose);
 
-		end
-
-		function delete(obj)
+		end  %close constructor
 
 
-		end
+
 		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 		%DESTRUCTOR
 		function delete(obj)
@@ -78,9 +98,13 @@ classdef scannerGUI < handle
 		end %close destructor
 
 		function scannerGUIClose(obj,~,~)
-			%Close figure then run destructor
-			obj.scanner.stopScan
-			delete(obj.gui.hFig)
+			%This callback function is run when the GUI figure window is closed
+			if obj.scanner.hDAQ.IsRunning
+				obj.scanner.stopAndDisconnectDAQ; %disconnect
+			else
+				release(obj.scanner.hDAQ);
+			end
+			delete(obj.gui.hFig) %Now close the figure window
 		end
 
 
@@ -89,16 +113,21 @@ classdef scannerGUI < handle
 		%The following are callback functions that are linked to UI elements
 
 		function startStopScan(obj)
+			%This callback function is run when the user clicks the START/STOP scan button
 			isRunning = obj.scanner.hDAQ.IsRunning;
-			if isRunning
-				obj.scanner.stopScan
 
+			if isRunning
+				%If the scanner is running, then stop scanning and change the button text
+				obj.scanner.stopScan
 				set(obj.gui.startStopScan, ...
 					'Value', isRunning, ...
 					'ForeGroundColor', 'g', ...
 					'String', 'START SCAN');
+				%update the reporting of the save state and the save dialog
+				obj.updateSaveUIelements
 			else
-				%Open a figure in the top right of the screen
+				%If the scanner is noty running, then open a figure in the top 
+				%right of the screen, start scanning, and change the button text.
 				thisFig=figure;
 				movegui(thisFig,'northwest')
 				obj.scanner.startScan
@@ -106,20 +135,83 @@ classdef scannerGUI < handle
 					'Value', isRunning, ...
 					'ForeGroundColor', 'r', ...
 					'String', 'STOP SCAN');
+	
+				%update the reporting of the save state and the save dialog
+				obj.updateSaveUIelements
 			end
+
+
+
+
 		end	%close startStopScan
 
 		function bidiScan(obj)
-
+			%This callback function is run when the user clicks the bidi checkbox
 			if obj.gui.bidi.Value
 				obj.scanner.scanPattern='bidi';
+				obj.gui.bidiPhase.Enable='on';
 			else
 				obj.scanner.scanPattern='uni';
+				obj.gui.bidiPhase.Enable='off';
 			end
 			obj.scanner.restartScan
 		end %close bidiScan
 
+		function bidiPhaseUpdate(obj)
+			%This callback function is run when the user updates the bidirectional phase edit box
+			newBidiPhase = obj.gui.bidiPhase.String;
+			newBidiPhaseAsNumber = str2num(newBidiPhase);
+
+			%Report to command line if the new bidi phase value is not a number
+			if isempty(newBidiPhaseAsNumber)
+				fprintf('\n ** The value %s is not a number ** \n\n',newBidiPhase)
+				return
+			end
+
+			obj.scanner.bidiPhase = newBidiPhaseAsNumber;
+		end %close bidiPhaseUpdate
+
+		function saveFnameUpdate(obj)
+			%This callback function is run when the user updates the save file name
+
+			if isempty(obj.gui.saveFname.String)
+				obj.gui.save.Enable='off';
+			else
+				obj.gui.save.Enable='on';
+			end
+			obj.scanner.saveFname = obj.gui.saveFname.String;			
+		end %close saveFnameUpdate
+
+
 	end %close methods
+
+
+
+	methods (Hidden)
+
+		function updateSaveUIelements(obj)
+			%reports whether the scanner will save data, etc
+			if obj.scanner.hDAQ.IsRunning;
+				obj.gui.saveFname.Enable='off';
+				obj.gui.save.Enable='off';
+			else
+				obj.gui.saveFname.Enable='on';
+				obj.gui.save.Enable='on';
+			end
+
+			if ~obj.gui.save.Value
+				obj.gui.save.String='Save';
+				return
+			end
+			if obj.scanner.hDAQ.IsRunning;
+				obj.gui.save.String='** SAVING **';
+			else
+				obj.gui.save.String='Save';
+			end
+		end %updateSaveUIelements
+
+	end %close hidden methods
+
 
 
 end %close scannerGUI
