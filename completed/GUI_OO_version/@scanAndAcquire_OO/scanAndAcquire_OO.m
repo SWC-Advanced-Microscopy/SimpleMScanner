@@ -369,7 +369,7 @@ classdef  scanAndAcquire_OO < handle
 
 			%Average all points from the same pixel
 			frame = imData(:,channelColumn);
-			frame = mean(reshape(imData,obj.samplesPerPixel,[]),1)'; %Average all points from the same pixel
+			frame = mean(reshape(frame,obj.samplesPerPixel,[]),1)'; %Average all points from the same pixel
 			%Create a square image of the correct orientation
 			frame = reshape(frame, [], obj.imSize); 
 			frame = -rot90(frame);
