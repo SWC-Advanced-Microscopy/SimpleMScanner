@@ -5,8 +5,9 @@ function success = checkScanParams(obj)
 %
 %
 % Purpose
-% Returns true of the scanner parameter stored as properties in the 
-% scanAndAcquire_OO object object are valid.
+% Returns true if the scanner parameters stored as properties in the 
+% scanAndAcquire_OO object object are valid. Returns false if they are
+% invalid.
 %
 %
 % Rob Campbell - Basel 2016

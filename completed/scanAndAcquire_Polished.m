@@ -22,8 +22,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % Instructions
 % Call the function with device ID of your NI acquisition board as the first input argument. 
 % All other settings are defined using parameter/value pairs. Quit by closing the figure window.
-% The X mirror should be on AO-0
-% The Y mirror should be on AO-1
+% The X mirror should be on AO-0, The Y mirror should be on AO-1.
 %
 %
 % Inputs (required)
