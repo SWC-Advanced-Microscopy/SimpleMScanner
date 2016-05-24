@@ -1,6 +1,10 @@
 function analogOutput_SingleShot
 % Play one cycle of a waveform out of an analog output
 %
+% function analogOutput_SingleShot
+%
+% Instructions
+% Connect AO0 of NI device Dev1 to an oscilloscope and run this function
 %
 %
 % Rob Campbell - Basel 2015
@@ -23,7 +27,7 @@ s.Rate = 2000;
 
 
 %Queue the data to the board
-s.queueOutputData(dataToPlay);
+s.queueOutputData(waveForm);
 
 
 %Play the waveform

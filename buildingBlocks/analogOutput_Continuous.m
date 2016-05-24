@@ -1,5 +1,7 @@
-function addAnalogOutput_Continuous
+function analogOutput_Continuous
 % Play a continuous sine wave out of an analog output
+%
+% function analogOutput_Continuous
 %
 %
 % Instructions

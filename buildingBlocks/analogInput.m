@@ -33,7 +33,7 @@ s.startForeground
 
 
 % - - - - - - - - - - - - - - - - - - - - -
-function plotData(src,event)
+function plotData(~,event)
 	t=event.TimeStamps;
 	x=event.Data;
  
