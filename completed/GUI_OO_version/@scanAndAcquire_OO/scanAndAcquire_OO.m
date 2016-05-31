@@ -69,6 +69,9 @@ classdef  scanAndAcquire_OO < handle
 	% 'bidiPhase'    - a scalar that defines the offset in pixels between the outgoing and return lines
 	% 			       in bidirectional scanning. 26 by default. This parameter needs changing often and is sensitive.
 	% 'enableHist'   - A boolean. True by default. If true, overlays an intensity histogram on top of the image.
+	% 'invertSignal' - A boolean. True by default. Set to true if using a PMT with a non-inverting amp. NOTE: different to other functions
+	% 'AIrange'      - A scalar defining the +/- range of the digitiser. Not all values are legal. Default is 2
+	%
 	%
 	%
 	% * Examples
@@ -92,8 +95,10 @@ classdef  scanAndAcquire_OO < handle
 		%Default settings that can be over-ridden by the user to change scan settings
 		inputChans = 0
 		sampleRate = 512E3
+		AIrange=2
 		samplesPerPixel = 4
-		imSize = 256 		
+		imSize = 256
+		invertSignal=true
 		scannerAmplitude = 2
 		fillFraction = 0.9
 		scanPattern = 'uni'
@@ -121,7 +126,6 @@ classdef  scanAndAcquire_OO < handle
 							'pointsPerLine', [])
 
 		%Settings that are unlikely to need changing
-		AI_range = 2 			% Digitise over +/- this range
 		maxScannerVoltage = 10 
 		minSecondsOfBufferedData = 0.25 %Each time fill the output buffer with at least this many seconds of data to avoid buffer under-runs
 	end %close properties (Hidden)
@@ -167,6 +171,8 @@ classdef  scanAndAcquire_OO < handle
 			params.addParameter('scanPattern',		obj.scanPattern,	@(x) ischar(x));
 			params.addParameter('bidiPhase', 		obj.bidiPhase,		@(x) isnumeric(x) && isscalar(x));
 			params.addParameter('scannerAmplitude', obj.scannerAmplitude, @(x) isnumeric(x) && isscalar(x));
+			params.addParameter('invertSignal', false, @(x) islogical (x) || x==0 || x==1);
+			params.addParameter('AIrange', 2,  @(x) isnumeric(x) && isscalar(x));
 
 			%Process the input arguments in varargin using the inputParser object we just built
 			params.parse(varargin{:});
@@ -175,12 +181,14 @@ classdef  scanAndAcquire_OO < handle
 			obj.inputChans		= params.Results.inputChans;
 			obj.saveFname 		=  params.Results.saveFname;
 			obj.imSize 			= params.Results.imSize;
+			obj.AIrange    		= params.Results.AIrange;
 			obj.samplesPerPixel = params.Results.samplesPerPixel;
 			obj.sampleRate 		= params.Results.sampleRate;
 			obj.fillFraction 	= params.Results.fillFraction;
 			obj.scanPattern 	= params.Results.scanPattern;
 			obj.bidiPhase 		= params.Results.bidiPhase;
 			obj.scannerAmplitude = params.Results.scannerAmplitude;
+			obj.invertSignal = params.Results.invertSignal;
 
 			if ~obj.checkScanParams %This method returns false if the scan prameter settings are not valid
 				fprintf('\n PLEASE CHECK YOUR SCANNER SETTINGS then run connectToDAQ\n\n')
@@ -328,15 +336,15 @@ classdef  scanAndAcquire_OO < handle
 		% Setters for properties which require connected DAQ objects to be updated.
 		% A setter is run when a value is assigned to a property. 
 
-		function set.AI_range(obj,val)
-			obj.AI_range = val;
+		function set.AIrange(obj,val)
+			obj.AIrange = val;
 			if isempty(obj.hAI)
 				return
 			end
 				
 			for ii=1:length(obj.hAI)
 				%Set the digitization range
-				obj.hAI(ii).Range = [-obj.AI_range,obj.AI_range];
+				obj.hAI(ii).Range = [-obj.AIrange,obj.AIrange];
 			end
 		end
 
@@ -354,7 +362,7 @@ classdef  scanAndAcquire_OO < handle
 
 			%Add the new channels
 			obj.hAI=obj.hDAQ.addAnalogInputChannel(obj.deviceID, obj.inputChans, obj.measurementType); 
-			obj.AI_range = obj.AI_range; %Apply the current analog input range to these new channels (TODO: may be dangerous)
+			obj.AIrange = obj.AIrange; %Apply the current analog input range to these new channels (TODO: may be dangerous)
 		end
 
 		function set.sampleRate(obj,val)
@@ -382,7 +390,11 @@ classdef  scanAndAcquire_OO < handle
 			frame = mean(reshape(frame,obj.samplesPerPixel,[]),1)'; %Average all points from the same pixel
 			%Create a square image of the correct orientation
 			frame = reshape(frame, [], obj.imSize); 
-			frame = -rot90(frame);
+			frame = rot90(frame);
+
+			if obj.invertSignal
+				frame=-frame;
+			end
 
 
 			%Remove the turn-around artefact 

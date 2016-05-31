@@ -1,4 +1,4 @@
-function plotImageData(imData,h,saveFname,bidiPhaseDelay)
+function plotImageData(imData,h,saveFname,bidiPhaseDelay,invertSigal)
 	%Plot (and optionally save) data produced by scanAndAcquire_Polished
 	%
 	% function plotImageData(imData,h,saveFname,scanPattern)
@@ -18,7 +18,7 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay)
 	% bidiPhaseDelay - [optional] If missing or empty, we assume the images are acquired using a uni-directional
 	%                  scan pattern. If bidiPhaseDelay is present, it is a scalar used to correct the phase
 	% 			       offset between the outgoing and return scanlines.
-	%
+	% invertSignal - false by default. set to true if using a PMT with a non-inverting amp.
 	%
 	% Rob Campbell - Basel 2016
 
@@ -26,18 +26,26 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay)
 		bidiPhaseDelay=[];
 	end
 
+	if nargin<5
+		invertSignal=false;
+	end
+
 	imSize = size(get(h(1).hAx,'CData'),1);
 
 	timeStamp = now*60^2*24*1E3; %MATLAB serial date in ms. This is used for saving. 
 
 	%The analog input range is in the CLIM property of the image axes
-	AI_range = get(h(1).imAx,'CLim');
-	AI_range = AI_range(2);
+	AIrange = get(h(1).imAx,'CLim');
+	AIrange = AIrange(2);
 
 	for chan = 1:size(imData,2)
 		
 		im = reshape(imData(:,chan), [], imSize);
-		im = -rot90(im);
+		im = rot90(im);
+
+		if invertSigal
+			im = -im;
+		end
 
 		%Remove the turn-around artefact 
 		if ~isempty(bidiPhaseDelay)
@@ -67,7 +75,7 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay)
 			%Keep the axes of the histogram looking nice
 			set(h(chan).histAx, ...
 				'YTick', [], ...
-				'XLim', [-0.1,AI_range], ... 
+				'XLim', [-0.1,AIrange], ... 
 				'Color', 'None', ...
 				'Box', 'Off');
 
@@ -88,7 +96,7 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay)
 			else
 				thisFname = saveFname;
 			end
-			im = im * 2^16/AI_range ; %ensure values span 16 bit range
+			im = im * 2^16/AIrange ; %ensure values span 16 bit range
 
 			imwrite(uint16(im), thisFname, 'tiff', ...
 						'Compression', 'None', ... 

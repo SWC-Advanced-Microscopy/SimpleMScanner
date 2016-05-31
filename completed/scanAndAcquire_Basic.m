@@ -96,7 +96,8 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	samplesPerPixel = 4; %Number of samples to take at each pixel. These will be averaged.
 	sampleRate 	= 512E3; 
 	fillFraction = 0.9; %1-fillFraction is considered to be the turn-around time and is excluded from the image
-	AI_range = 2; % Digitise over +/- this range. This is a setting we are unlikely to change often
+	AIrange = 2; % Digitise over +/- this range. 
+	invertSigal = false; %Set to true if using a non-inverting amp with a PMT
 	%----------------------------------
 
 
@@ -108,7 +109,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	s.Rate = sampleRate;
 
 	AI=s.addAnalogInputChannel(hardwareDeviceID, 'ai0', 'Voltage'); % The PMT signal
-	AI.Range = [-AI_range,AI_range]; % Digitize over this range of values
+	AI.Range = [-AIrange,AIrange]; % Digitize over this range of values
 
 	%Add analog two output channels for scanners 0 is x and 1 is y
 	s.addAnalogOutputChannel(hardwareDeviceID,0:1,'Voltage');
@@ -211,12 +212,16 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 		% correctly, the X mirror turn-around artefact is now gone. 
 		im = im(end-imSize:end,:); 
 
-		im = -rot90(im);
+		im = rot90(im);
+
+		if invertSigal
+			im = -im;
+		end
 
 		set(hIm,'CData',im);
-		set(imAx,'CLim',[0,AI_range]);
+		set(imAx,'CLim',[0,AIrange]);
 		if ~isempty(saveFname) %Optionally write data to disk
-			im = im * 2^16/AI_range ; %ensure values span 16 bit range
+			im = im * 2^16/AIrange ; %ensure values span 16 bit range
 			im = uint16(im); %Convert to unsigned 16 bit integers. Negative numbers will be gone.
 			imwrite(im, saveFname, 'tiff', ...
 					'Compression', 'None', ... %Don't compress because this slows IO

@@ -63,7 +63,7 @@ function scanAndAcquire_Minimal(DeviceID)
 	galvoAmp   = 2 ;     % Galvo amplitude. Actually, this is amplitude/2. Increasing this increases the area scanned (CAREFUL!)
 	imSize     = 256 ;   % Number of pixel rows and columns. Increasing this value will decrease the frame rate and increase the resolution.
 	sampleRate = 128E3 ; % Increasing the sampling rate will increase the frame rate (CAREFUL!)
-	AI_range = 2; % Digitize over +/- this range. This is a setting we are unlikely to change often
+	AIrange = 2; % Digitize over +/- this range. 
 
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -72,7 +72,7 @@ function scanAndAcquire_Minimal(DeviceID)
 	s.Rate = sampleRate;  % Set the sample rate. Note that the sample rate is fixed, so changing it will alter the frame rate
 
 	AI=s.addAnalogInputChannel(DeviceID, 'ai0', 'Voltage');	% Add an analog input channel for the PMT signal
-	AI.Range = [-AI_range,AI_range]; % Get the board to digitize over this range of values
+	AI.Range = [-AIrange,AIrange]; % Get the board to digitize over this range of values
 
 	% Add analog two output channels for scanners:  0 is x and 1 is y
 	s.addAnalogOutputChannel(DeviceID,0:1,'Voltage'); 
@@ -178,12 +178,12 @@ function scanAndAcquire_Minimal(DeviceID)
 
 		im = reshape(x,imSize,imSize); %Reshape the data vector into a square image
 		im = rot90(im); %So the fast axis (x) is show along the image rows
-		im = -im; %because the data are negative-going
+		%im = -im; %You will need to multiply by minus one if you're using a PMT and your amplifier doesn't invert the signal
 
 
 		% Plot the image data by setting the "CData" property of the image object in the plot window
 		set(hIm,'CData',im);
-		set(imAx,'CLim',[0,AI_range]);
+		set(imAx,'CLim',[0,AIrange]);
  	end %close plotData
 
 

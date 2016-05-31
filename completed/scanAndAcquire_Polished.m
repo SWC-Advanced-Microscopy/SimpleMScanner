@@ -47,7 +47,8 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % 			       in bidirectional scanning. 26 by default. This parameter needs changing often and 
 %                  is sensitive.
 % 'enableHist'   - A boolean. True by default. If true, overlays an intensity histogram on top of the image.
-%
+% 'invertSignal' - A boolean. False by default. Set to true if using a PMT with a non-inverting amp.
+% 'AIrange'      - A scalar defining the +/- range of the digitiser. Not all values are legal. Default is 2
 %
 % Examples
 % ONE
@@ -101,6 +102,8 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	params.addParameter('scanPattern', 'uni', @(x) ischar(x));
 	params.addParameter('bidiPhase', 26,  @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('enableHist', true, @(x) islogical (x) || x==0 || x==1);
+	params.addParameter('invertSignal', false, @(x) islogical (x) || x==0 || x==1);
+	params.addParameter('AIrange', 2,  @(x) isnumeric(x) && isscalar(x));
 
 	%Process the input arguments in varargin using the inputParser object we just built
 	params.parse(varargin{:});
@@ -110,12 +113,15 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	saveFname  =  params.Results.saveFname;
 	galvoAmp   = params.Results.scannerAmplitude;
 	imSize     = params.Results.imSize;
+	AIrange    = params.Results.AIrange;
 	samplesPerPixel = params.Results.samplesPerPixel;
 	sampleRate   = params.Results.sampleRate;
 	fillFraction = params.Results.fillFraction;
 	scanPattern  = params.Results.scanPattern;
 	bidiPhase    = params.Results.bidiPhase;
 	enableHist   = params.Results.enableHist;
+	invertSignal = params.Results.invertSignal;
+
 
 	if ~strcmpi(scanPattern,'bidi')
 		bidiPhase=[];
@@ -130,9 +136,8 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	s.Rate = sampleRate;
 
 	AI=s.addAnalogInputChannel(hardwareDeviceID, inputChans, 'Voltage'); 
-	AI_range = 2; % Digitize over +/- this range. Unlikely we need this as an input argument
 	for ii=1:length(AI)
-		AI(ii).Range = [-AI_range,AI_range];
+		AI(ii).Range = [-AIrange,AIrange];
 	end
 
 	%Add analog two output channels for scanners 0 is x and 1 is y
@@ -203,7 +208,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	end
 
 	%Tweak settings on axes and figure elemenents
-	set([h(:).imAx], 'XTick',[], 'YTick', [], 'CLim',[0,AI_range]) %note: we store the AI_range here
+	set([h(:).imAx], 'XTick',[], 'YTick', [], 'CLim',[0,AIrange]) %note: we store the AIrange here
 	colormap gray
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -234,7 +239,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 		end
 
 		%External function call to function in private directory
-		plotImageData(downSampled,h,saveFname,bidiPhase)
+		plotImageData(downSampled,h,saveFname,bidiPhase,invertSignal)
  	end %close plotData
 
 
