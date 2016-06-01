@@ -26,9 +26,7 @@ function plotLastFrameData(obj)
 		'Box', 'Off');
 
 
-	if strcmpi(obj.scanPattern,'bidi')
-		%Because we are trimming X in a nasty way
-		set([obj.figureHandles.channel(:).imAx],'XLim',[1,size(obj.imageDataFromLastFrame,2)]);
-	end
+	set([obj.figureHandles.channel(:).imAx],'XLim',[1,size(obj.imageDataFromLastFrame,2)]);
+
 
 end %plotLastFrameData
