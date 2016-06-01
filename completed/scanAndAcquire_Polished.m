@@ -39,7 +39,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % 'imSize'       - The number of pixels in x/y. Square frames only are produced. [256 by default.]
 % 'sampleRate'   - The samples/second for the DAQ to run. [256E3 by default]
 % 'fillFraction' - The proportion of the scan range to keep. 1-fillFraction 
-%	    			   is discarded due to the scanner turn-around. [0.9 by default]
+%	    			   is discarded due to the scanner turn-around. [0.85 by default]
 % 'samplesPerPixel'  - Number of samples per pixel. [4 by default]
 % 'scanPattern'  - A string defining whether we do uni or bidirectional scanning: 'uni' or 'bidi'
 %				 'uni' by default
@@ -98,7 +98,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	params.addParameter('imSize', 256, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('samplesPerPixel', 4, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('sampleRate', 512E3, @(x) isnumeric(x) && isscalar(x));
-	params.addParameter('fillFraction', 0.9, @(x) isnumeric(x) && isscalar(x));
+	params.addParameter('fillFraction', 0.85, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('scanPattern', 'uni', @(x) ischar(x));
 	params.addParameter('bidiPhase', 10,  @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('enableHist', true, @(x) islogical (x) || x==0 || x==1);

@@ -62,7 +62,7 @@ classdef  scanAndAcquire_OO < handle
 	% 'imSize'     - The number of pixels in x/y. Square frames only are produced. [256 by default.]
 	% 'sampleRate' - The samples/second for the DAQ to run. [256E3 by default]
 	% 'fillFraction'     - The proportion of the scan range to keep. 1-fillFraction 
-	%	    			   is discarded due to the scanner turn-around. [0.9 by default]
+	%	    			   is discarded due to the scanner turn-around. [0.85 by default]
 	% 'samplesPerPixel'  - Number of samples per pixel. [4 by default]
 	% 'scanPattern'  - A string defining whether we do uni or bidirectional scanning: 'uni' or 'bidi'
 	%				 'bidi' by default
@@ -100,7 +100,7 @@ classdef  scanAndAcquire_OO < handle
 		imSize = 256
 		invertSignal=true
 		scannerAmplitude = 2
-		fillFraction = 0.9
+		fillFraction = 0.85
 		scanPattern = 'bidi'
 		bidiPhase = 10
 		saveFname =  ''

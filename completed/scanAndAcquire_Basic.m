@@ -95,7 +95,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 	imSize = 256; %Number pixel rows and columns
 	samplesPerPixel = 4; %Number of samples to take at each pixel. These will be averaged.
 	sampleRate 	= 512E3; 
-	fillFraction = 0.9; %1-fillFraction is considered to be the turn-around time and is excluded from the image
+	fillFraction = 0.85; %1-fillFraction is considered to be the turn-around time and is excluded from the image
 	AIrange = 2; % Digitise over +/- this range. 
 	invertSigal = false; %Set to true if using a non-inverting amp with a PMT
 	%----------------------------------
