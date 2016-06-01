@@ -65,9 +65,9 @@ classdef  scanAndAcquire_OO < handle
 	%	    			   is discarded due to the scanner turn-around. [0.9 by default]
 	% 'samplesPerPixel'  - Number of samples per pixel. [4 by default]
 	% 'scanPattern'  - A string defining whether we do uni or bidirectional scanning: 'uni' or 'bidi'
-	%				 'uni' by default
+	%				 'bidi' by default
 	% 'bidiPhase'    - a scalar that defines the offset in pixels between the outgoing and return lines
-	% 			       in bidirectional scanning. 26 by default. This parameter needs changing often and is sensitive.
+	% 			       in bidirectional scanning. 10 by default. This parameter needs changing often and is sensitive.
 	% 'enableHist'   - A boolean. True by default. If true, overlays an intensity histogram on top of the image.
 	% 'invertSignal' - A boolean. True by default. Set to true if using a PMT with a non-inverting amp. NOTE: different to other functions
 	% 'AIrange'      - A scalar defining the +/- range of the digitiser. Not all values are legal. Default is 2
@@ -101,8 +101,8 @@ classdef  scanAndAcquire_OO < handle
 		invertSignal=true
 		scannerAmplitude = 2
 		fillFraction = 0.9
-		scanPattern = 'uni'
-		bidiPhase = 26
+		scanPattern = 'bidi'
+		bidiPhase = 10
 		saveFname =  ''
 	end %close properties
 

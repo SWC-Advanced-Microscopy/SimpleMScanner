@@ -44,7 +44,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 % 'scanPattern'  - A string defining whether we do uni or bidirectional scanning: 'uni' or 'bidi'
 %				 'uni' by default
 % 'bidiPhase'    - a scalar that defines the offset in pixels between the outgoing and return lines
-% 			       in bidirectional scanning. 26 by default. This parameter needs changing often and 
+% 			       in bidirectional scanning. 10 by default. This parameter needs changing often and 
 %                  is sensitive.
 % 'enableHist'   - A boolean. True by default. If true, overlays an intensity histogram on top of the image.
 % 'invertSignal' - A boolean. False by default. Set to true if using a PMT with a non-inverting amp.
@@ -100,7 +100,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	params.addParameter('sampleRate', 512E3, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('fillFraction', 0.9, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('scanPattern', 'uni', @(x) ischar(x));
-	params.addParameter('bidiPhase', 26,  @(x) isnumeric(x) && isscalar(x));
+	params.addParameter('bidiPhase', 10,  @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('enableHist', true, @(x) islogical (x) || x==0 || x==1);
 	params.addParameter('invertSignal', false, @(x) islogical (x) || x==0 || x==1);
 	params.addParameter('AIrange', 2,  @(x) isnumeric(x) && isscalar(x));
