@@ -5,7 +5,8 @@ function analogOutput_Continuous
 %
 %
 % Instructions
-% Simply call the function. Quit with ctrl-C.
+% Connect AO0 of NI device Dev1 to an oscilloscope and run this function.
+% Quit with ctrl-C.
 %
 %
 % Rob Campbell - Basel 2015
@@ -22,7 +23,7 @@ s.addAnalogOutputChannel('Dev1',0,'Voltage');
 
 
 %Build one cycle of a sine wave
-waveForm=sin(-pi : pi/1000 : pi);
+waveForm=sin(-pi : pi/1000 : pi)';
 
 
 %Set the sample rate to 2000 samples per second, so the waveform plays out in one second
@@ -40,7 +41,7 @@ s.IsContinuous = true; %needed to provide continuous behavior
 
 
 %queue the first cycle 
-s.queueOutputData(dataToPlay); 
+s.queueOutputData(waveForm); 
 
 
 % START!
