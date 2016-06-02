@@ -370,6 +370,7 @@ classdef  scanAndAcquire_OO < handle
 			if isempty(obj.hDAQ)
 				return
 			end
+			obj.hDAQ.stop;
 			obj.hDAQ.Rate = obj.sampleRate;
 		end			
 
