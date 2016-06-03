@@ -64,7 +64,7 @@ classdef simpleOOexample < handle
 			plot(obj.exampleProperty,'-k')
 			hold on 
 			plot(obj.exampleProperty,'ok','MarkerFaceColor',[1,1,1]*0.5)
-		end %close displayProperty
+		end %close plotProperty
 
 	end %close methods
 
