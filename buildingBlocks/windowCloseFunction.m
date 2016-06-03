@@ -7,7 +7,7 @@ function windowCloseFunction
 % Demo showing how to run a defined sub-function when the figure window is closed.
 %
 %
-% Rob Campbell - Basel 2015
+% Rob Campbell - Basel 2016
 
 
 

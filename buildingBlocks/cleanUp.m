@@ -7,7 +7,7 @@ function cleanUp
 % Demo of how to run a sub-function when the caller function ends. 
 % The "cleanUp" function will run even if the caller crashes.
 %
-% Rob Campbell - Basel 2015
+% Rob Campbell - Basel 2016
 %
 % see: http://blogs.mathworks.com/loren/2008/03/10/keeping-things-tidy/
 %

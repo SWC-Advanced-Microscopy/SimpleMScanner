@@ -46,6 +46,7 @@ if isempty(ind)
 	return
 end
 
+
 if length(ind)>1
 	%Return empty if multiple objects were found
 	if verbose
@@ -57,3 +58,13 @@ end
 
 
 S=evalin('base',W(ind).name);
+
+
+if ~isvalid(S)
+	%Return empty if object is not valid (although isvalid is for timer objects it seems to work here too)
+	if verbose
+		fprintf('No valid %s object in base workspace\n',className)
+	end
+	S=[];
+	return
+end

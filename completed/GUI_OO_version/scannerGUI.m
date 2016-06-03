@@ -35,8 +35,12 @@ classdef scannerGUI < handle
 	properties % These are the properties ("variables") associated with the scannerGUI class
 		gui 	 %Stores the GUI handles
 		scanner  %Stores the scanAndAcquire_OO object
-	end
+	end %close properties
 
+	properties (Hidden)
+		frameAcquiredListener
+	end %close properties (Hidden)
+		
 
 	methods % Here are the methods ("functions") available to the user
 
@@ -48,12 +52,12 @@ classdef scannerGUI < handle
 			obj.scanner = getScannerObjectFromBaseWorkSpace; %function in "private" directory
 
 			if isempty(obj.scanner) && nargin>0
-				fprintf('Creating instance of scanAndAcquire_OO\n')
+				obj.gui.statusBar.String = 'Creating instance of scanAndAcquire_OO';
 				obj.scanner = scanAndAcquire_OO(deviceID,varargin{:});
 			end
 
-			if isempty(obj.scanner) || ~isvalid(obj.scanner)
-				error('FAILED TO CONNECT TO SCANNER')
+			if isempty(obj.scanner)
+				error('FAILED TO CONNECT TO SCANNER -- obj.scanner is empty')
 			end
 
 
@@ -87,6 +91,11 @@ classdef scannerGUI < handle
     		%Run method scannerGUIClose if the GUI's figure window is closed by the user
 		    set(obj.gui.hFig,'CloseRequestFcn', @obj.scannerGUIClose);
 
+		    % Listen to the FrameAcquired notifier on scanAndAcquire_OO so that we can update info
+		    % in the GUI. 
+		    obj.frameAcquiredListener = addlistener(obj.scanner, 'frameAcquired', @(~,~) obj.frameAcquiredCallBack)
+
+			obj.gui.statusBar.String = 'Ready to acquire';
 		end  %close constructor
 
 
@@ -125,9 +134,11 @@ classdef scannerGUI < handle
 					'String', 'START SCAN');
 				%update the reporting of the save state and the save dialog
 				obj.updateSaveUIelements
+				obj.gui.statusBar.String = 'Ready to acquire';
 			else
 				%If the scanner is noty running, then open a figure in the top 
 				%right of the screen, start scanning, and change the button text.
+				obj.gui.statusBar.String = 'Preparing to scan';
 				thisFig=figure;
 				movegui(thisFig,'northwest')
 				obj.scanner.startScan
@@ -138,7 +149,7 @@ classdef scannerGUI < handle
 	
 				%update the reporting of the save state and the save dialog
 				obj.updateSaveUIelements
-			end
+		end
 
 
 
@@ -208,7 +219,21 @@ classdef scannerGUI < handle
 			else
 				obj.gui.save.String='Save';
 			end
-		end %updateSaveUIelements
+		end %close updateSaveUIelements
+
+		function frameAcquiredCallBack(obj)
+			% This callback is run once each frame has been acquired. 
+			% It updates the status bar in the GUI to show the current number of frames
+			% plus other parameters.
+			msg = sprintf('Frame #%d - %0.1f FPS - %dx%d - %d samples/pix - %0.1f V - fillFrac=%0.2f',...
+				obj.scanner.numFrames, ...
+				obj.scanner.fps,...
+				obj.scanner.imSize, obj.scanner.imSize,...
+				obj.scanner.samplesPerPixel, ...
+				obj.scanner.scannerAmplitude, ...
+				obj.scanner.fillFraction);
+			obj.gui.statusBar.String = msg;
+		end %close frameAcquiredCallBack
 
 	end %close hidden methods
 

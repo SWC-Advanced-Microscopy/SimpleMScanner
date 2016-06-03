@@ -17,7 +17,7 @@ function saveLastFrameToDisk(obj)
 			thisFname = obj.saveFname;
 		end
 
-		im = im * 2^16/obj.AI_range; %ensure values span 16 bit range
+		im = im * 2^16/obj.AIrange; %ensure values span 16 bit range
 
 		timeStamp = now*60^2*24*1E3; %MATLAB serial date in ms.
 		imwrite(uint16(im), thisFname, 'tiff', ...

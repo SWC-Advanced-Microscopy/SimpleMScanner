@@ -34,33 +34,41 @@ For educational purposes, it is possible to use a laser pointer and a photo-diod
 
 # Contents of this project
 
-* **scanAndAcquire_Minimal** - The least you need to scan the mirrors across a sample and obtain an image:
-  1. Uni-directional scanning
-  2. Displays image to screen only
-  3. One channel only
-  4. No correction for imaging artefacts
+* **scanAndAcquire_Minimal** - This tutorial function is the least you need to scan the mirrors across a sample and obtain an image:
+  1. Uni-directional scanning.
+  2. Displays image to screen only.
+  3. One channel only.
+  4. No correction for imaging artefacts.
   5. Scanning parameters are hard-coded into the function. User can change scanner amplitude, number of pixels in the image, and sample rate.
 
-* **scanAndAcquire_Basic** - The same as scanAndAcquire_Minimal but adds:
-  1. Averaging using multiple samples per pixel
-  2. Correction of the X mirror (fast axis) turn-around artefact
+* **scanAndAcquire_Basic** - This tutorial function is the least you need to get good images and save them to disk. 
+It provides the same features as scanAndAcquire_Minimal but adds:
+  1. Averaging using multiple samples per pixel.
+  2. Correction of the X mirror (fast axis) turn-around artefact.
+  3. Saving to disk as a TIFF stack. A function to read back the data is provided.
 
 * **scanAndAcquire_Polished** - The same as scanAndAcquire_Basic but adds the following features:
-  1. All important parameters can be set via parameter/value pairs
-  2. More error checks
-  3. Acquisition of multiple channels
-  4. Generation of scan patterns and image display are handled by external functions
-  5. Adds an optional histogram overlay on top of the scan images
-  6. Saving to disk with time-stamps in TIFF info
-  7. Bidirectional scanning
+  1. All important parameters can be set via parameter/value pairs.
+  2. More error checks.
+  3. Acquisition of multiple channels.
+  4. Generation of scan patterns and image display are handled by external functions.
+  5. Adds an optional histogram overlay on top of the scan images.
+  6. Time-stamps added to the saved TIFF info.
+  7. Bidirectional scanning.
+  8. Improved buffering to allow for higher frame rates.
 
-* **scanAndAcquire_OO** - The same features as scanAndAcquire_Polished but in an object-oriented interface.
+* **scanAndAcquire_OO** - The same features as scanAndAcquire_Polished but in an object-oriented interface. 
+The purpose of this it to contract procedural with object-oriented code.
 
-* **scannerGUI** - A simple GUI wrapper for scanAndAcquire_OO. Currently it only:
-  1. Starts/stops scanning
-  2. Switches back and forth between unidirectional and bidirectional modes. 
-  3. Allows update of the bidirectional phase delay
-  4. Saving that can be toggled with a checkbox
+* **scannerGUI** - A simple GUI wrapper class for scanAndAcquire_OO. 
+This showcases some of the advantages of using object-oriented techniques for data acquisition and GUI-building. 
+The scannerGUI class is not supposed to be a complete GUI application. 
+Its purpose is to demonstrate how easy it is to wrap an object with a GUI. 
+Currently the scannerGUI provides the following features:
+  1. Starts/stops scanning.
+  2. Switches back and forth between unidirectional and bidirectional modes.
+  3. Allows update of the bidirectional phase delay whilst scanning.
+  4. Saving to disk.
 
 * The **buildingBlocks** folder contains code snippets to help teach the individual concepts from the above without providing a solution to the whole problem. 
 

@@ -24,4 +24,8 @@ function getDataFromDAQ(obj,event)
 	obj.saveLastFrameToDisk
 	obj.plotLastFrameData
 
+	% Hit the notifier. scanAndAcquire_OO does not use this for anything but other pieces
+	% of code, such as GUIs that wrap the scanAndAcquire_OO object,  may find it useful.
+	notify(obj,'frameAcquired')
+
 end %close getDataFromDAQ

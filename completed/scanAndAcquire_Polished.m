@@ -3,13 +3,27 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 %
 % scanAndAcquire(deviceID,'param1',val1,'param2',val2,...)
 %
-% Purpose
-% A relatively complete function for simple two-photon scanning
 %
-% Details
-% The X mirror should be on AO-0
-% The Y mirror should be on AO-1
-% No Pockels blanking and all the waveform is used.
+% Purpose
+% This function controls scanning and image acquisition of a scanning microscope, such as
+% a 2-photon microscope. This is a polished version of scanAndAcquire_Basic. It adds a 
+% variety of extra features and is written in a less didactic manner than the more simple
+% functions it is related to. The following features are added over scanAndAcquire_Basic:
+%  1. All important parameters can be set via parameter/value pairs.
+%  2. More error checks.
+%  3. Acquisition of multiple channels.
+%  4. Generation of scan patterns and image display are handled by external functions.
+%  5. Adds an optional histogram overlay on top of the scan images.
+%  6. Time-stamps added to the saved TIFF info.
+%  7. Bidirectional scanning.
+%  8. Improved buffering to allow for higher frame rates.
+%
+%
+% Instructions
+% Call the function with device ID of your NI acquisition board as the first input argument. 
+% All other settings are defined using parameter/value pairs. Quit by closing the figure window.
+% The X mirror should be on AO-0, The Y mirror should be on AO-1.
+%
 %
 % Inputs (required)
 % hardwareDeviceID - string defining the ID of the DAQ device 
@@ -22,42 +36,41 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 %                Data will be written as a TIFF stack. If not supplied, no data are saved to disk. 
 %				 NOTE: if a TIFF  with this name already exists, data will be appended to it.
 % 'scannerAmplitude'  - The amplitude of the voltage waveform. [2 by default, meaning +/- 2V]
-% 'imSize'  - The number of pixels in x/y. Square frames only are produced. [256 by default.]
-% 'sampleRate' - The samples/second for the DAQ to run. [256E3 by default]
-% 'fillFraction' 	 - The proportion of the scan range to keep. 1-fillFraction 
-%	    			   is discarded due to the scanner turn-around. [0.9 by default]
+% 'imSize'       - The number of pixels in x/y. Square frames only are produced. [256 by default.]
+% 'sampleRate'   - The samples/second for the DAQ to run. [256E3 by default]
+% 'fillFraction' - The proportion of the scan range to keep. 1-fillFraction 
+%	    			   is discarded due to the scanner turn-around. [0.85 by default]
 % 'samplesPerPixel'  - Number of samples per pixel. [4 by default]
 % 'scanPattern'  - A string defining whether we do uni or bidirectional scanning: 'uni' or 'bidi'
 %				 'uni' by default
-% 'bidiPhase' - a scalar that defines the offset in pixels between the outgoing and return lines
-% 			    in bidirectional scanning. 26 by default. This parameter needs changing often and is sensitive.
+% 'bidiPhase'    - a scalar that defines the offset in pixels between the outgoing and return lines
+% 			       in bidirectional scanning. 10 by default. This parameter needs changing often and 
+%                  is sensitive.
 % 'enableHist'   - A boolean. True by default. If true, overlays an intensity histogram on top of the image.
-%
+% 'invertSignal' - A boolean. False by default. Set to true if using a PMT with a non-inverting amp.
+% 'AIrange'      - A scalar defining the +/- range of the digitiser. Not all values are legal. Default is 2
 %
 % Examples
 % ONE
-% The following example shows how to list the available DAQ devices and start
-% scanAndAcquire_Polished using the ID for the NI PCI-6115 card with the default. 
-% scanning options. 
-%
-% >> daq.getDevices
-%
-% ans = 
-%
-% Data acquisition devices:
-%
-% index Vendor Device ID          Description          
-% ----- ------ --------- ------------------------------
-% 1     ni     Dev1      National Instruments PCI-6115
-% 2     ni     Dev2      National Instruments PCIe-6321
-% 3     ni     Dev3      National Instruments PCI-6229
-%
+% Acquire data from DAQ device at Dev1 using default settings.%
 % >> scanAndAcquire_Polished('Dev1')
-% 
 %
 % TWO
 % acquire data on channels 0 and 2
 % scanAndAcquire('Dev1','inputChans',[0,2])
+%
+% THREE
+% Increase the sample rate and frame rate
+% scanAndAcquire('Dev1','samplesPerPixel',16,'sampleRate',2E6)
+%
+% FOUR
+% Acquire data from three channels and stream to disk.
+% scanAndAcquire('Dev1','inputChans',[0:2],'saveFname','myData.tiff')
+%
+%
+% Requirements
+% Data Acquisition Toolbox
+%
 %
 % Rob Campbell - Basel 2015
 
@@ -85,25 +98,30 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	params.addParameter('imSize', 256, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('samplesPerPixel', 4, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('sampleRate', 512E3, @(x) isnumeric(x) && isscalar(x));
-	params.addParameter('fillFraction', 0.9, @(x) isnumeric(x) && isscalar(x));
+	params.addParameter('fillFraction', 0.85, @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('scanPattern', 'uni', @(x) ischar(x));
-	params.addParameter('bidiPhase', 26,  @(x) isnumeric(x) && isscalar(x));
+	params.addParameter('bidiPhase', 10,  @(x) isnumeric(x) && isscalar(x));
 	params.addParameter('enableHist', true, @(x) islogical (x) || x==0 || x==1);
+	params.addParameter('invertSignal', false, @(x) islogical (x) || x==0 || x==1);
+	params.addParameter('AIrange', 2,  @(x) isnumeric(x) && isscalar(x));
 
 	%Process the input arguments in varargin using the inputParser object we just built
 	params.parse(varargin{:});
 
 	%Extract values from the inputParser
 	inputChans = params.Results.inputChans;
-	saveFname =  params.Results.saveFname;
-	amp = params.Results.scannerAmplitude;
-	imSize = params.Results.imSize;
+	saveFname  =  params.Results.saveFname;
+	galvoAmp   = params.Results.scannerAmplitude;
+	imSize     = params.Results.imSize;
+	AIrange    = params.Results.AIrange;
 	samplesPerPixel = params.Results.samplesPerPixel;
-	sampleRate = params.Results.sampleRate;
+	sampleRate   = params.Results.sampleRate;
 	fillFraction = params.Results.fillFraction;
-	scanPattern = params.Results.scanPattern;
-	bidiPhase = params.Results.bidiPhase;
-	enableHist = params.Results.enableHist;
+	scanPattern  = params.Results.scanPattern;
+	bidiPhase    = params.Results.bidiPhase;
+	enableHist   = params.Results.enableHist;
+	invertSignal = params.Results.invertSignal;
+
 
 	if ~strcmpi(scanPattern,'bidi')
 		bidiPhase=[];
@@ -114,21 +132,13 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% CONNECT TO THE HARDWARE
-
-	%Create a session (using NI hardware by default)
 	s=daq.createSession('ni');
 	s.Rate = sampleRate;
 
-
-	%Add one or more analog input channels for the PMT signals
 	AI=s.addAnalogInputChannel(hardwareDeviceID, inputChans, 'Voltage'); 
-	AI_range = 2; % Digitise over +/- this range
 	for ii=1:length(AI)
-		AI(ii).Range = [-AI_range,AI_range]; %very likely this is fine to leave hard-coded like this.
+		AI(ii).Range = [-AIrange,AIrange];
 	end
-
-	%Add a listener to get data back after each frame
-	addlistener(s,'DataAvailable', @plotData); 
 
 	%Add analog two output channels for scanners 0 is x and 1 is y
 	s.addAnalogOutputChannel(hardwareDeviceID,0:1,'Voltage'); 
@@ -137,12 +147,15 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% BUILD THE GALVO WAVEFORMS (using function in "private" sub-directory)
-	dataToPlay = generateGalvoWaveforms(imSize,amp,samplesPerPixel,fillFraction,scanPattern); 
-	%We want at least 250 ms of data in the queue, to be really certain don't we hit buffer underflows and the scanning stops
+	dataToPlay = generateGalvoWaveforms(imSize,galvoAmp,samplesPerPixel,fillFraction,scanPattern); 
+
+	% We want at least 250 ms of data in the queue, to be really certain don't we hit buffer 
+	% underflows that will cause the scanning to stop.
+
 	secondsOfDataInQueue = length(dataToPlay)/s.Rate;
 	minDataThreshold = 0.25; %Must have at least this much data in the queue
 	nFramesToQueue = ceil(minDataThreshold/secondsOfDataInQueue);
-	dataToPlay = repmat(dataToPlay,nFramesToQueue ,1); %expand queued data accordingly
+	dataToPlay = repmat(dataToPlay,nFramesToQueue ,1); %expand queued data sufficiently
    
 	msOfDataInQueue = round( (length(dataToPlay)/s.Rate)*1000 );
 	fprintf('There is %d ms of data in the output queue ', msOfDataInQueue)
@@ -150,6 +163,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 		fprintf('(queuing in blocks of %d frames)',nFramesToQueue)
 	end
 	fprintf('\n')
+
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% PREPARE TO ACQUIRE
@@ -168,16 +182,14 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%Pull in the data when each frame has been acquired
 	s.NotifyWhenDataAvailableExceeds=length(dataToPlay)/nFramesToQueue; %when to read back
+	addlistener(s,'DataAvailable', @plotData); 	%Add a listener to get data back after each frame
 
 
 
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% SET UP THE FIGURE WINDOW THAT WILL DISPLAY THE DATA
-
-	%We will plot the data on screen as they come in
 	hFig=clf;
-
 
 	for ii=1:length(inputChans)
 		h(ii).imAx=subplot(1,length(inputChans),ii); %This axis will house the image
@@ -196,27 +208,24 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	end
 
 	%Tweak settings on axes and figure elemenents
-	set([h(:).imAx], 'XTick',[], 'YTick', [], 'CLim',[0,AI_range]) %note: we store the AI_range here
-
+	set([h(:).imAx], 'XTick',[], 'YTick', [], 'CLim',[0,AIrange]) %note: we store the AIrange here
 	colormap gray
 
 	%- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 	% START!
-
 	startTime=now;
 	set(hFig,'CloseRequestFcn', @(~,~,~) figCloseAndStopScan(s,startTime,hFig));
+
 	s.startBackground %start the acquisition in the background
 	fprintf('Close window to stop scanning\n')
 
+
+
 	%-----------------------------------------------
-
-
 	function plotData(~,event)
-
 		imData=event.Data;
 
 		if size(imData,1)<=1
-			fprintf('No data\n')
 			return
 		end
 
@@ -230,21 +239,17 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 		end
 
 		%External function call to function in private directory
-		plotImageData(downSampled,h,saveFname,bidiPhase)
+		plotImageData(downSampled,h,saveFname,bidiPhase,invertSignal)
+ 	end %close plotData
 
- 	end %plotData
+
+end %close scanAndAcquire
 
 
-end %scanAndAcquire
 
+%-----------------------------------------------
 function figCloseAndStopScan(s,startTime,hFig)
 	%Runs on scan figure window close
-	delete(hFig)
-	stopAcq(s,startTime)
-	
-end
-
-function stopAcq(s,startTime)
 	fprintf('Acquired %0.1f seconds of data\n',(now-startTime)*60^2*24)
 	fprintf('Zeroing AO channels\n')
 	s.stop;
@@ -254,4 +259,5 @@ function stopAcq(s,startTime)
 
 	fprintf('Releasing NI hardware\n')
 	release(s);
-end %stopAcq
+	delete(hFig)
+end %close figCloseAndStopScan
