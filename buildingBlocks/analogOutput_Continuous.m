@@ -9,7 +9,7 @@ function analogOutput_Continuous
 % Quit with ctrl-C.
 %
 %
-% Rob Campbell - Basel 2015
+% Rob Campbell - Basel 2016
 
 
 

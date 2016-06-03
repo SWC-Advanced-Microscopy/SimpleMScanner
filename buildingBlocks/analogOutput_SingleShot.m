@@ -8,7 +8,7 @@ function analogOutput_SingleShot
 % 
 %
 %
-% Rob Campbell - Basel 2015
+% Rob Campbell - Basel 2016
 
 
 %Create a session using NI hardware

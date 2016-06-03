@@ -7,7 +7,7 @@ function analogInput_Continuous
 % Records data comntinuously and plots to screen.
 % Displays positive values only.
 % 
-% Rob Campbell - Basel 2015
+% Rob Campbell - Basel 2016
 
 
 %Create a session using NI hardware

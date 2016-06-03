@@ -11,7 +11,7 @@ function varargout = analogInput_SingleShot
 % data - [optional] Returns the data vector that was plotted to screen.
 %
 % 
-% Rob Campbell - Basel 2015
+% Rob Campbell - Basel 2016
 
 
 %Create a session using NI hardware
