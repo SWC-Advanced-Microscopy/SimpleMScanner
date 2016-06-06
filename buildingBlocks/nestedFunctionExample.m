@@ -59,6 +59,6 @@ end %close nestedFunctionExample
 % non-nested sub-functions follow
 function myNonNestedFunction(myVariable)
 	%This function does not share the same scope as the main function body
-	myVariable=9999;
+	myVariable=myVariable+9999;
 	fprintf('myVariable is %d in the non-nested "myNonNestedFunction"\n',myVariable)
 end
