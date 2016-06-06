@@ -35,12 +35,14 @@ fprintf('\nThe contents of cell array "r" are:\n')
 disp(r)
 
 
-fprintf('Use cellfun and a function handle to calculate the of each each vector in "r":\n' );
+fprintf('Use cellfun and a function handle to calculate the mean of each vector in "r":\n' );
 disp(cellfun(@mean,r))
 
 
 fprintf('Use cellfun and an anonymous function to calculate 1.96 SD of each each vector in "r":\n' );
+
 SD95 = @(x) (std(x)*1.96);
+
 disp(cellfun(SD95,r))
 
 
