@@ -265,7 +265,7 @@ classdef  scanAndAcquire_OO < handle
 				if obj.numFrames==0
 					fprintf('\nSomething went wrong. No frames were acquired.\n')
 				else
-					fprintf('Acquired %d frames in %0.1f\n', obj.numFrames, (now-obj.startTime)*60^2*24)
+					fprintf('Acquired %d frames in %0.1f seconds\n', obj.numFrames, (now-obj.startTime)*60^2*24)
 				end
 			end
 		end %close stopScan
