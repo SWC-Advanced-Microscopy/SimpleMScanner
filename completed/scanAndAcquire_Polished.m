@@ -230,11 +230,12 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 		end
 
 		%Average all points from the same pixel
-		downSampled(:,1) = mean(reshape(imData(:,1),[],samplesPerPixel),2); 
+        imData = mean(reshape(imData,samplesPerPixel,[]),1)'; 
+		downSampled(:,1) = imData;
 		if size(imData,2)>1
 			downSampled = repmat(downSampled,1,size(imData,2));
 			for chan=2:size(imData,2)
-				downSampled(:,chan) = mean(reshape(imData(:,chan),[],samplesPerPixel),2); 
+				downSampled(:,chan) = mean(reshape(imData(:,chan),samplesPerPixel,[]),2); 
 			end
 		end
 
