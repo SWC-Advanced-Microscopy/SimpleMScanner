@@ -4,7 +4,9 @@ function getDataFromDAQ(obj,event)
 	% It populates the property	imageDataFromLastFrame
 
 	imData=event.Data;
-
+    t=event.TimeStamps;
+    obj.lastFrameEndTime = t(end);
+    
 	if size(imData,1)<=1
 		return
 	end

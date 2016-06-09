@@ -17,12 +17,10 @@ function saveLastFrameToDisk(obj)
 		end
 
 		im = im * 2^16/obj.AIrange; %ensure values span 16 bit range
-
-		timeStamp = now*60^2*24*1E3; %MATLAB serial date in ms.
 		imwrite(uint16(im), thisFname, 'tiff', ...
 				'Compression', 'None', ... 
    				'WriteMode', 'Append',....
-   				'Description',sprintf('%f',timeStamp));
+   				'Description',sprintf('%f',obj.lastFrameEndTime));
 	end
 
 end %saveLastFrameToDisk

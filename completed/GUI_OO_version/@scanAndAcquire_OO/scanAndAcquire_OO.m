@@ -116,7 +116,8 @@ classdef  scanAndAcquire_OO < handle
 		getDataListener 		% Listener that pulls in data off the DAQ after each frame
 		queueWaveformsListener 	% Listern that sends galvo waveform data to DAQ buffer
 		figureHandles % Keep figure handles here (for now) TODO
-
+        lastFrameEndTime %DAQ time stamp associated with end of last frame
+        
 		%Data from the last frame are stored here:
 		imageDataFromLastFrame %an array of size: imageRows x imageCols x numChannels
 

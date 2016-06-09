@@ -1,4 +1,4 @@
-function plotImageData(imData,h,saveFname,bidiPhaseDelay,invertSigal)
+function plotImageData(data,h,saveFname,bidiPhaseDelay)
 	%Plot (and optionally save) data produced by scanAndAcquire_Polished
 	%
 	% function plotImageData(imData,h,saveFname,scanPattern)
@@ -10,15 +10,16 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay,invertSigal)
 	%
 	% 
 	% Inputs
-	% imData - Data pulled in from NI board after one frame then downsampled such that each row
-	%          represents a data point from a different pixel. Columns are channels.
+	% data - Data is a structure of data pulled in from NI board after one frame.
+	%		 data.downsSample - image data after one frame then downsampled such that each row represents 
+	%                           a data point from a different pixel. Columns are channels.
+	%        data.TimeStamps - vector of time stamps
 	% h - plot handles structure produced by scanAndAcquire_Polished
 	% saveFname - [string] the relative or absolute path of a file to which data should be saved. 
 	%             If empty, no data are saved.
 	% bidiPhaseDelay - [optional] If missing or empty, we assume the images are acquired using a uni-directional
 	%                  scan pattern. If bidiPhaseDelay is present, it is a scalar used to correct the phase
 	% 			       offset between the outgoing and return scanlines.
-	% invertSignal - false by default. set to true if using a PMT with a non-inverting amp.
 	%
 	% Rob Campbell - Basel 2016
 
@@ -26,13 +27,10 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay,invertSigal)
 		bidiPhaseDelay=[];
 	end
 
-	if nargin<5
-		invertSignal=false;
-	end
+	imData = data.downSampled;
 
 	imSize = size(get(h(1).hAx,'CData'),1);
 
-	timeStamp = now*60^2*24*1E3; %MATLAB serial date in ms. This is used for saving. 
 
 	%The analog input range is in the CLIM property of the image axes
 	AIrange = get(h(1).imAx,'CLim');
@@ -101,7 +99,7 @@ function plotImageData(imData,h,saveFname,bidiPhaseDelay,invertSigal)
 			imwrite(uint16(im), thisFname, 'tiff', ...
 						'Compression', 'None', ... 
 	    				'WriteMode', 'Append',....
-	    				'Description',sprintf('%f',timeStamp));
+	    				'Description',sprintf('%f',data.TimeStamps(end)));
 		end
 		% - - - - - - - - - - - - - - - - - -  
 

@@ -153,7 +153,7 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 	% underflows that will cause the scanning to stop.
 
 	secondsOfDataInQueue = length(dataToPlay)/s.Rate;
-	minDataThreshold = 0.25; %Must have at least this much data in the queue
+	minDataThreshold = 0.50; %Must have at least this much data in the queue
 	nFramesToQueue = ceil(minDataThreshold/secondsOfDataInQueue);
 	dataToPlay = repmat(dataToPlay,nFramesToQueue ,1); %expand queued data sufficiently
    
@@ -223,7 +223,9 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 
 	%-----------------------------------------------
 	function plotData(~,event)
+		%Calls an external function to actually do the plotting
 		imData=event.Data;
+	    TimeStamps=event.TimeStamps;
 
 		if size(imData,1)<=1
 			return
@@ -240,7 +242,13 @@ function scanAndAcquire_Polished(hardwareDeviceID,varargin)
 		end
 
 		%External function call to function in private directory
-		plotImageData(downSampled,h,saveFname,bidiPhase,invertSignal)
+		if invertSignal
+			downSampled = -downSampled;
+		end
+
+		data.downSampled = downSampled;
+		data.TimeStamps = TimeStamps;
+		plotImageData(data,h,saveFname,bidiPhase)
  	end %close plotData
 
 
