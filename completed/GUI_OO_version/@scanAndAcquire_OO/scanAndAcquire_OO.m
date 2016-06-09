@@ -127,7 +127,7 @@ classdef  scanAndAcquire_OO < handle
 
 		%Settings that are unlikely to need changing
 		maxScannerVoltage = 10 
-		minSecondsOfBufferedData = 0.25 %Each time fill the output buffer with at least this many seconds of data to avoid buffer under-runs
+		minSecondsOfBufferedData = 0.5 %Each time fill the output buffer with at least this many seconds of data to avoid buffer under-runs
 	end %close properties (Hidden)
 
 
