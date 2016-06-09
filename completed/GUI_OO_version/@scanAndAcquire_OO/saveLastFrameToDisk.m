@@ -1,4 +1,3 @@
-
 function saveLastFrameToDisk(obj)
 	% Plots data from the last frame
 
@@ -12,7 +11,7 @@ function saveLastFrameToDisk(obj)
 		im = obj.imageDataFromLastFrame(:,:,chan);
 
 		if length(obj.figureHandles.channel)>1
-			thisFname = [obj.figureHandles.channel(chan).hAx.tag, obj.saveFname];
+			thisFname = sprintf('%s_chan%02d', obj.saveFname, obj.inputChans(chan));
 		else
 			thisFname = obj.saveFname;
 		end
