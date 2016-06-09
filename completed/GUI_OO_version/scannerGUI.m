@@ -47,12 +47,17 @@ classdef scannerGUI < handle
 		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 		%CONSTRUCTOR
 		function obj=scannerGUI(deviceID,varargin)
-
+            
 			%Import BakingTray object from base workspace			
 			obj.scanner = getScannerObjectFromBaseWorkSpace; %function in "private" directory
-
-			if isempty(obj.scanner) && nargin>0
+			
+            if isempty(obj.scanner)
+                if nargin<1
+                    fprintf('Supply device ID or create scanner object in base work space\n')
+                end
+                
 				obj.gui.statusBar.String = 'Creating instance of scanAndAcquire_OO';
+                disp(obj.gui.statusBar.String)
 				obj.scanner = scanAndAcquire_OO(deviceID,varargin{:});
 			end
 
@@ -62,7 +67,6 @@ classdef scannerGUI < handle
 
 
 			obj.gui = scannerGUI_fig; %Build GUI and return handles
-
 
 			% Write the current save file name (if any) and bidirectional phase delay
 			% into the checkboxes.
@@ -93,7 +97,7 @@ classdef scannerGUI < handle
 
 		    % Listen to the FrameAcquired notifier on scanAndAcquire_OO so that we can update info
 		    % in the GUI. 
-		    obj.frameAcquiredListener = addlistener(obj.scanner, 'frameAcquired', @(~,~) obj.frameAcquiredCallBack)
+		    obj.frameAcquiredListener = addlistener(obj.scanner, 'frameAcquired', @(~,~) obj.frameAcquiredCallBack);
 
 			obj.gui.statusBar.String = 'Ready to acquire';
 		end  %close constructor
@@ -101,17 +105,12 @@ classdef scannerGUI < handle
 
 
 		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-		%DESTRUCTOR
-		function delete(obj)
-			%NOTHING HERE YET
-		end %close destructor
-
 		function scannerGUIClose(obj,~,~)
 			%This callback function is run when the GUI figure window is closed
 			if obj.scanner.hDAQ.IsRunning
 				obj.scanner.stopAndDisconnectDAQ; %disconnect
 			else
-				release(obj.scanner.hDAQ);
+				delete(obj.scanner);
 			end
 			delete(obj.gui.hFig) %Now close the figure window
 		end
