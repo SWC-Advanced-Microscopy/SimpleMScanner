@@ -2,6 +2,7 @@
 
 Simple MATLAB 2-photon scanning software for demo and teaching purposes.
 
+<img src="https://github.com/tenss/SimpleMScanner/blob/gh-pages/images/active_cells_smaller.jpg" />
 
 ## What is this?
 
