@@ -41,10 +41,6 @@ function plotImageData(data,h,saveFname,bidiPhaseDelay)
 		im = reshape(imData(:,chan), [], imSize);
 		im = rot90(im);
 
-		if invertSigal
-			im = -im;
-		end
-
 		%Remove the turn-around artefact 
 		if ~isempty(bidiPhaseDelay)
 			%Flip the even rows if data were acquired bidirectionally
