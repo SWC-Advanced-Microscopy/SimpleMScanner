@@ -44,7 +44,7 @@ For educational purposes, it is possible to use a laser pointer and a photo-diod
 
 * **scanAndAcquire_Basic** - This tutorial function is the least you need to get good images and save them to disk. 
 It provides the same features as scanAndAcquire_Minimal but adds:
-  1. Averaging using multiple samples per pixel.
+  1. [Averaging using multiple samples per pixel](https://raw.githubusercontent.com/tenss/SimpleMScanner/gh-pages/images/samples_per_pix_example.jpg).
   2. Correction of the X mirror (fast axis) turn-around artefact.
   3. Saving to disk as a TIFF stack. A function to read back the data is provided.
 
