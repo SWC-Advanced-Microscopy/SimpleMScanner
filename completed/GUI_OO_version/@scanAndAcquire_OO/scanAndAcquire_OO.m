@@ -104,18 +104,25 @@ classdef  scanAndAcquire_OO < handle
 		scanPattern = 'bidi'
 		bidiPhase = 10
 		saveFname =  ''
+        
+        shutterLine = 'port0/line5';
+        shutterOpenTTLState=1;
 	end %close properties
 
-
+    properties (Dependent)
+  		sampleRate
+    end
+    
 	properties (Hidden)
 		%Properties that hold handles to important objects
-		hDAQ  	  % The DAQ device object 
+		hDAQ  	  % The DAQ device object
 		hAI 	  % Analog input channels
+        hDIO      % Session for shutter line
 		numFrames % Counter for number of frames acquired 
 		startTime % Serial date at start of scan
 		getDataListener 		% Listener that pulls in data off the DAQ after each frame
 		queueWaveformsListener 	% Listern that sends galvo waveform data to DAQ buffer
-		figureHandles % Keep figure handles here (for now) TODO
+		figureHandles % Keep figure handles here
         lastFrameEndTime %DAQ time stamp associated with end of last frame
         
 		%Data from the last frame are stored here:
@@ -231,6 +238,7 @@ classdef  scanAndAcquire_OO < handle
 
             obj.setUpFigureWindow %Only runs if the figure window is not already open
 
+            obj.openShutter
 			obj.prepareQueueAndBuffer %TODO: test if data have been queued or just run this each time?
 
 			obj.startTime=now;
@@ -251,6 +259,7 @@ classdef  scanAndAcquire_OO < handle
 			end
 
 			obj.hDAQ.stop; 
+            obj.closeShutter
 			if reportFramesAcquired
 				if obj.numFrames==0
 					fprintf('\nSomething went wrong. No frames were acquired.\n')
@@ -269,6 +278,19 @@ classdef  scanAndAcquire_OO < handle
 				obj.startScan
 			end
 		end %close restartScan
+        
+        function openShutter(obj)
+            if ~isempty(obj.hDIO)
+                obj.hDIO.outputSingleScan(obj.shutterOpenTTLState)
+            end
+        end %close openShutter
+        
+        function closeShutter(obj)
+            if ~isempty(obj.hDIO)
+                obj.hDIO.outputSingleScan(~obj.shutterOpenTTLState)
+            end
+        end %close closeShutter
+            
 		function varargout = fps(obj)
 			% Returns the number of frames per second.
 			% If called with an output argument, the value is returned

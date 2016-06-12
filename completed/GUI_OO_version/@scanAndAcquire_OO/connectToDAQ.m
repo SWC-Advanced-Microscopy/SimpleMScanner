@@ -33,4 +33,9 @@ function connectToDAQ(obj,deviceID)
 	%Add analog two output channels for scanners 0 is x and 1 is y
 	obj.hDAQ.addAnalogOutputChannel(obj.deviceID, obj.scannerChannels, obj.measurementType); 
 
+    %Create a session for the DIO shutter line
+    if ~isempty(obj.shutterLine)
+        obj.hDIO = daq.createSession('ni');
+        obj.hDIO.addDigitalChannel(obj.deviceID,obj.shutterLine,'OutputOnly');
+    end
 end %close connectToDAQ
