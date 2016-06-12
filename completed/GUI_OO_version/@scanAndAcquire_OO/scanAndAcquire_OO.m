@@ -93,16 +93,24 @@ classdef  scanAndAcquire_OO < handle
 		deviceID  % String holding the device ID of the DAQ board
 
 		% Default settings that can be over-ridden by the user to change scan settings
-		% The following are used to build the galvo waveoforms and the image
-		samplesPerPixel = 4
-		imSize = 256
-		scannerAmplitude = 2
-		scanPattern = 'bidi'
-		fillFraction = 0.85
-		bidiPhase = 10
-		invertSignal = false
+		% Most of these are set via setters to allow the user to change the values during 
+		% scanning. The setters also contain code to validate the value provided (see below).
 
-		saveFname =  ''        
+		% The following are used to build the galvo waveforms *and* the image
+		samplesPerPixel
+		imSize
+		scanPattern
+		fillFraction
+
+		% The scanner amplitude is read only when building the scan waveforms. It isn't used 
+		% in building the image
+		scannerAmplitude
+
+		%The following settings are used in determining how the plot is formed but do not affect the waveforms
+		invertSignal %If true, inverts the acquired data before plotting
+		bidiPhase    %The offset between outgoing and reverse scan lines in bidirectional scanning
+
+		saveFname
 
 		% The shutter is connected to a pre-defined line and is opened 
 		% when scanning starts then closed when scanning stops. 
@@ -174,15 +182,16 @@ classdef  scanAndAcquire_OO < handle
 
 			params = inputParser;
 			params.CaseSensitive = false;
-			params.addParameter('inputChans',	 	'ai0',				@(x) isnumeric(x));
-			params.addParameter('saveFname',		obj.saveFname,		@(x) ischar(x));
-			params.addParameter('imSize', 			obj.imSize,			@(x) isnumeric(x) && isscalar(x));
-			params.addParameter('samplesPerPixel', 	obj.samplesPerPixel,@(x) isnumeric(x) && isscalar(x));
-			params.addParameter('fillFraction', 	obj.fillFraction,	@(x) isnumeric(x) && isscalar(x));
-			params.addParameter('scanPattern',		obj.scanPattern,	@(x) ischar(x));
-			params.addParameter('bidiPhase', 		obj.bidiPhase,		@(x) isnumeric(x) && isscalar(x));
-			params.addParameter('scannerAmplitude', obj.scannerAmplitude, @(x) isnumeric(x) && isscalar(x));
-			params.addParameter('invertSignal', obj.invertSignal, @(x) islogical (x) || x==0 || x==1);
+			params.addParameter('inputChans', 	'ai0',	@(x) isnumeric(x));
+			params.addParameter('saveFname',	'',		@(x) ischar(x));
+
+			params.addParameter('imSize', 		256,	@(x) isnumeric(x) && isscalar(x));
+			params.addParameter('samplesPerPixel', 4,	@(x) isnumeric(x) && isscalar(x));
+			params.addParameter('fillFraction',	0.85,	@(x) isnumeric(x) && isscalar(x));
+			params.addParameter('scanPattern',	'bidi',	@(x) ischar(x));
+			params.addParameter('bidiPhase', 	10,		@(x) isnumeric(x) && isscalar(x));
+			params.addParameter('scannerAmplitude', 2, 	@(x) isnumeric(x) && isscalar(x));
+			params.addParameter('invertSignal', false,  @(x) islogical (x) || x==0 || x==1);
 
 			%The following parameters have getters and setters. Changing them
 			%during scanning will stop and re-start the acquisiiton with new parameters.
@@ -461,7 +470,6 @@ classdef  scanAndAcquire_OO < handle
 			if running
 				obj.startScan
 			end
-
 		end
 		function inputChans = get.inputChans(obj)
 			%Report the connected analog input channels
@@ -471,6 +479,50 @@ classdef  scanAndAcquire_OO < handle
 			end
 			inputChans = {obj.hAI.ID};			
 		end		
+
+
+		% The following are setters for the scan waveforms. Each setter will re-start a scan if it's on-going.
+		% The effect of this is to re-build the galvo waveforms and begin scanning with new waveforms.
+		function set.scannerAmplitude(obj,val)
+			if ~isscalar(val) || ~isnumeric(val)
+				return
+			end
+			val = abs(val);
+			if val>10
+				val=10;
+				fprintf('Scanner amplitude capped to 10V\n')
+			end
+			obj.scannerAmplitude = val;
+			obj.restartScan %only restarts if it's already running
+		end
+		function set.samplesPerPixel(obj,val)
+			if ~isscalar(val) || ~isnumeric(val) || val<1
+				return
+			end
+			obj.samplesPerPixel = val;
+			obj.restartScan
+		end
+		function set.imSize(obj,val)
+			if ~isscalar(val) || ~isnumeric(val) || val<1
+				return
+			end
+			obj.imSize = val;
+			obj.restartScan
+		end		
+		function set.scanPattern(obj,val)
+			if ~strcmpi('bidi',val) &&  ~strcmpi('uni',val)
+				return
+			end
+			obj.scanPattern = val;
+			obj.restartScan
+		end	
+		function set.fillFraction(obj,val)
+			if ~isscalar(val) || ~isnumeric(val) || val>1 || val<0
+				return
+			end
+			obj.fillFraction = val;
+			obj.restartScan
+		end	
 
 	end %close methods
 

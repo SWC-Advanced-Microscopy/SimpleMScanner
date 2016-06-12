@@ -34,8 +34,14 @@ function dataToPlay = galvoWaveforms(obj,verbose)
 		verbose=false;
 	end
 
-	obj.scannerAmplitude = abs(obj.scannerAmplitude);
-
+	%Simple check to ensure that we have all the parameters needed to build the waveforms
+	if isempty(obj.scannerAmplitude) || ...
+		isempty(obj.samplesPerPixel) || ...
+		isempty(obj.imSize) || ...
+		isempty(obj.scanPattern) || ...
+		isempty(obj.fillFraction)
+		return
+	end	
 
 	% Calculate the number of samples per line. We want to produce a final image composed of
 	% imSize data points on each line. However, if the fill fraction is less than 1, we
