@@ -33,7 +33,10 @@ function setUpFigureWindow(obj)
 		'YTick', [], ...
 		'CLim', [0,obj.AIrange]) 
 
-	colormap gray
+	%Set a gray colormap with red as the max pixel
+	grayMap = gray;
+	grayMap(end,:)=[1,0,0];
+	colormap(grayMap)
 
 	%Expand figure window with number of channels
 	pos=get(obj.figureHandles.fig,'Position');

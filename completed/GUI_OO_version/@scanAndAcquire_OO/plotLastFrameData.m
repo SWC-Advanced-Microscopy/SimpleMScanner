@@ -13,7 +13,7 @@ function plotLastFrameData(obj)
 		c=get([obj.figureHandles.channel(chan).histAx],'Children');
 		set(c, ...
 			'EdgeColor','None', ...
-			'FaceColor','r',...
+			'FaceColor','c',...
 			'FaceAlpha',0.75)
 
 	end
@@ -26,7 +26,8 @@ function plotLastFrameData(obj)
 		'Box', 'Off');
 
 
-	set([obj.figureHandles.channel(:).imAx],'XLim',[1,size(obj.imageDataFromLastFrame,2)]);
+	set([obj.figureHandles.channel(:).imAx], ...
+		'XLim', [1,size(obj.imageDataFromLastFrame,2)]);
 
 
 end %plotLastFrameData
