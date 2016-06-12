@@ -45,8 +45,10 @@ classdef  scanAndAcquire_OO < handle
     %
     %
     % * Inputs
-    % deviceID - string defining the ID of the DAQ device see daq.getDevices for finding the ID of your device.
-    % paramFile - relative or absolute path to an INI file that contains the scan parameters.
+    % paramFile - (optional) relative or absolute path to an INI file that contains the scan parameters.
+    %             By default the first 'scannerConf.ini' file in the path is loaded. Read scannerConf.ini
+    %             to see how to configure your acquisition settings.
+    %
     %
     %
     % * Examples
@@ -149,15 +151,29 @@ classdef  scanAndAcquire_OO < handle
             %
             % In this case the constructor handles input arguments and then connects to the DAQ
 
+
             %Extract parameters from INI file
-            params = readScannerINI;
+            if nargin<1
+                paramFile=[];
+            end
+
+            %Ensure that we have all required directories in the path
+            path2file=regexprep(which(mfilename),'@.*','');
+            %this covers us for cases where people CD to the directory to start the program but did not add it to the path
+            addpath(path2file,'-end') 
+            dirsToAdd={'utils'};
+            for ii=1:length(dirsToAdd)
+                addpath(fullfile(path2file,dirsToAdd{ii}),'-end')
+            end
+
+            %Read parameters from the default file
+            params = readScannerINI(paramFile);
 
             %Set the scan pattern variables
             obj.imSize           = params.waveforms.imSize;
             obj.samplesPerPixel  = params.waveforms.samplesPerPixel;
             obj.fillFraction     = params.waveforms.fillFraction;
             obj.scanPattern      = params.waveforms.scanPattern;
-
             obj.scannerAmplitude = params.waveforms.scannerAmplitude;
 
             if ~obj.checkScanParams %This method returns false if the scan prameter settings are not valid

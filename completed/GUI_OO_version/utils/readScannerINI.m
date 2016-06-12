@@ -20,7 +20,7 @@ function [out,pathToINI]=readScannerINI(INIfname)
 % Rob Campbell - Basel 2016
 
 
-if nargin<1 | isempty(INIfname)
+if nargin<1 || isempty(INIfname)
     INIfname='scannerConf.ini';
 end
 
@@ -28,9 +28,10 @@ end
 %Read INI file
 defaultFname='scannerConf_DEFAULT.ini';
 if ~exist(defaultFname,'file')
-    fprintf('%s can not find file %s. Can not read settings file.\n',mfilename,defaultFname)
+    fprintf('\n%s can not find file %s. Can not read settings file.\n\n',mfilename,defaultFname)
     return
 end
+
 if exist(INIfname,'file')
     out = readThisINI(INIfname);
     pathToINI = which(INIfname); %So we optionally return the path to the INI file
