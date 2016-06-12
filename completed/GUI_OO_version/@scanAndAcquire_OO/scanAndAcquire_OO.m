@@ -65,56 +65,51 @@ classdef  scanAndAcquire_OO < handle
 
 
     properties
-        %Properties that hold handles to important objects
-        deviceID  % String holding the device ID of the DAQ board
-
+        % Properties that hold handles to important objects
+        % For details on what these do, please see scannerConf.ini
+        %
         % Default settings that can be over-ridden by the user to change scan settings
-        % Most of these are set via setters to allow the user to change the values during 
-        % scanning. The setters also contain code to validate the value provided (see below).
+        % even after the object has been instantiated. Most of these paramaters are set 
+        % via setters to allow the user to change the values during scanning and have the
+        % scanner seamlessly re-set and begin scanning with the new parameters. 
+        % The setters also contain code to validate the value provided (see below).
 
-        % The following are used to build the galvo waveforms *and* the image
+        deviceID
         samplesPerPixel
         imSize
         scanPattern
         fillFraction
-
-        % The scanner amplitude is read only when building the scan waveforms. It isn't used 
-        % in building the image
         scannerAmplitude
-
-        %The following settings are used in determining how the plot is formed but do not affect the waveforms
-        invertSignal %If true, inverts the acquired data before plotting
-        bidiPhase    %The offset between outgoing and reverse scan lines in bidirectional scanning
-
-        saveFname
-
-        % The shutter is connected to a pre-defined line and is opened 
-        % when scanning starts then closed when scanning stops. 
+        invertSignal
+        bidiPhase
         shutterLine
         shutterOpenTTLState
         shutterDelay
+
+        saveFname %This is not defined in the INI file
     end %close properties
 
     properties (Dependent)
-        sampleRate % Sample rate of the DAQ board running the scanners and
-        AIrange    % The analog input range over which the DAQ digitizes
-        inputChans % A vector of analog input channel IDs
-    end
+        sampleRate
+        AIrange   
+        inputChans
+    end %close dependent properties
     
     properties (Hidden)
         %Properties that hold handles to important objects
         hDAQ      % The DAQ device object
-        hAI       % Analog input channels
-        hDIO      % Session for shutter line
+        hAI       % Analog input channels (this is just a reference to the AI channels in hDAQ)
+        hDIO      % Session for shutter line. Separate from hDAQ
+
         numFrames % Counter for number of frames acquired 
         startTime % Serial date at start of scan
         getDataListener         % Listener that pulls in data off the DAQ after each frame
         queueWaveformsListener  % Listern that sends galvo waveform data to DAQ buffer
-        figureHandles % Keep figure handles here
-        lastFrameEndTime %DAQ time stamp associated with end of last frame
+        figureHandles    % Keep figure handles here
+        lastFrameEndTime % DAQ time stamp associated with end of last frame
         
-        %Data from the last frame are stored here:
-        imageDataFromLastFrame %an array of size: imageRows x imageCols x numChannels
+        % Data from the last frame are stored here.
+        imageDataFromLastFrame % An array of size: imageRows x imageCols x numChannels
 
         % A structure populated by prepareQueueAndBuffer
         scanQueue = struct('galvoWaveformData', [], ...
@@ -122,8 +117,8 @@ classdef  scanAndAcquire_OO < handle
                             'pointsPerLine', [])
 
         %Settings that are unlikely to need changing
-        maxScannerVoltage = 10 
-        minSecondsOfBufferedData = 0.5 %Each time fill the output buffer with at least this many seconds of data to avoid buffer under-runs
+        maxScannerVoltage
+        minSecondsOfBufferedData
     end %close properties (Hidden)
 
 
@@ -176,6 +171,7 @@ classdef  scanAndAcquire_OO < handle
             obj.scanPattern      = params.waveforms.scanPattern;
             obj.scannerAmplitude = params.waveforms.scannerAmplitude;
 
+            obj.minSecondsOfBufferedData = params.waveforms.minSecondsOfBufferedData;
             if ~obj.checkScanParams %This method returns false if the scan prameter settings are not valid
                 fprintf('\n PLEASE CHECK YOUR SCANNER SETTINGS then run connectToDAQ\n\n')
                 return
@@ -191,8 +187,8 @@ classdef  scanAndAcquire_OO < handle
             %DAQ has been made.
             obj.sampleRate  = params.DAQ.sampleRate;
             obj.AIrange     = params.DAQ.AIrange;
-            obj.inputChans  = params.Results.inputChans; %the channels are added here (see setters, below)
-
+            obj.inputChans  = params.DAQ.inputChans; %the channels are added here (see setters, below)
+            obj.maxScannerVoltage = params.DAQ.maxScannerVoltage;
 
             % The following settings influence how the data are plotted
             obj.invertSignal = params.image.invertSignal;
