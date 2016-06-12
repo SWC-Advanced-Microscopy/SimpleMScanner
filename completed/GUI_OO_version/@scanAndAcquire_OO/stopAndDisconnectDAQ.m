@@ -10,7 +10,10 @@ function stopAndDisconnectDAQ(obj)
 	obj.hDAQ.startForeground;
 
 	fprintf('Releasing NI hardware\n')
-	release(obj.hDAQ);
+	obj.hDAQ.release;
+    if ~isempty(obj.hDIO)
+        obj.hDIO.release;
+    end
 	
 
 end %close stopAndDisconnectDAQ

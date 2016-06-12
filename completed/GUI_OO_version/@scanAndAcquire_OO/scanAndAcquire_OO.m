@@ -209,6 +209,10 @@ classdef  scanAndAcquire_OO < handle
 			obj.stopAndDisconnectDAQ; %stop and don't report the number of acquired frames
 			delete(obj.getDataListener)
 			delete(obj.queueWaveformsListener)
+            
+            if ~isempty(obj.figureHandles)
+                delete(obj.figureHandles.fig)
+            end
 		end %close destructor
 
 
@@ -216,7 +220,7 @@ classdef  scanAndAcquire_OO < handle
 
 		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 		% Short methods follow. Longer ones in standalone .m files in the "@" directory
-		function startScan(obj,setupFreshFigWindow)
+		function startScan(obj)
 			% function startScan(obj,setupFreshFigWindow)
 			% Start scanning 
 
@@ -225,13 +229,7 @@ classdef  scanAndAcquire_OO < handle
 				return
 			end
 
-			if nargin<2
-				setupFreshFigWindow=true;
-			end
-
-			if setupFreshFigWindow
-				obj.setUpFigureWindow
-			end
+            obj.setUpFigureWindow %Only runs if the figure window is not already open
 
 			obj.prepareQueueAndBuffer %TODO: test if data have been queued or just run this each time?
 
@@ -240,8 +238,8 @@ classdef  scanAndAcquire_OO < handle
 			obj.hDAQ.startBackground %start the acquisition in the background
 		end %close startScan
 
-		function stopScan(obj,reportFramesAcquired,closeFigWindow)
-			% function stopScan(obj,reportFramesAcquired,closeFigWindow)
+		function stopScan(obj,reportFramesAcquired)
+			% function stopScan(obj,reportFramesAcquired)
 
 			%Check if now running before carrying on
 			if ~obj.hDAQ.IsRunning
@@ -251,17 +249,8 @@ classdef  scanAndAcquire_OO < handle
 			if nargin<2
 				reportFramesAcquired=true;
 			end
-			if nargin<3
-				closeFigWindow=true;
-			end
 
 			obj.hDAQ.stop; 
-
-			if ~isempty(obj.figureHandles) && closeFigWindow
-				obj.figureHandles.fig.delete %close figure
-				obj.figureHandles=[];
-			end
-
 			if reportFramesAcquired
 				if obj.numFrames==0
 					fprintf('\nSomething went wrong. No frames were acquired.\n')
@@ -276,11 +265,10 @@ classdef  scanAndAcquire_OO < handle
 			% Useful in cases when a scanning parameter is altered and we want this
 			% to take effect.
 			if obj.hDAQ.IsRunning
-				obj.stopScan(0,0)
-				obj.startScan(0)
+				obj.stopScan(0)
+				obj.startScan
 			end
-		end %cloase restartScan
-
+		end %close restartScan
 		function varargout = fps(obj)
 			% Returns the number of frames per second.
 			% If called with an output argument, the value is returned

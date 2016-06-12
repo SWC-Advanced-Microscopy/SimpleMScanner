@@ -53,7 +53,8 @@ classdef scannerGUI < handle
 			
             if isempty(obj.scanner)
                 if nargin<1
-                    fprintf('Supply device ID or create scanner object in base work space\n')
+                    fprintf('** Please supply device ID or create scanner object in base work space **\n')
+                    return
                 end
                 
 				obj.gui.statusBar.String = 'Creating instance of scanAndAcquire_OO';
@@ -107,12 +108,8 @@ classdef scannerGUI < handle
 		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 		function scannerGUIClose(obj,~,~)
 			%This callback function is run when the GUI figure window is closed
-			if obj.scanner.hDAQ.IsRunning
-				obj.scanner.stopAndDisconnectDAQ; %disconnect
-			else
-				delete(obj.scanner);
-			end
-			delete(obj.gui.hFig) %Now close the figure window
+			delete(obj.scanner);
+			delete(obj.gui.hFig) %Close the GUI figure window
 		end
 
 
@@ -135,11 +132,8 @@ classdef scannerGUI < handle
 				obj.updateSaveUIelements
 				obj.gui.statusBar.String = 'Ready to acquire';
 			else
-				%If the scanner is noty running, then open a figure in the top 
-				%right of the screen, start scanning, and change the button text.
+				%If the scanner is not running, then start scanning, and change the button text.
 				obj.gui.statusBar.String = 'Preparing to scan';
-				thisFig=figure;
-				movegui(thisFig,'northwest')
 				obj.scanner.startScan
 				set(obj.gui.startStopScan, ...
 					'Value', isRunning, ...

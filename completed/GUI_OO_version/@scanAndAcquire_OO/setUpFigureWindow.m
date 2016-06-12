@@ -1,7 +1,19 @@
 function setUpFigureWindow(obj)
 	% Set up the figure window for displaying data as they stream in
+    % only do this if the window does not currently exist
 
-	obj.figureHandles.fig = clf;
+    %If a window already exists, we don't make a new one
+    if ~isempty(obj.figureHandles) && ...
+            isa(obj.figureHandles.fig,'matlab.ui.Figure') && ...
+            isvalid(obj.figureHandles.fig)
+        return
+    end
+    
+    fprintf('Setting up new %d channel figure window\n',length(obj.inputChans))
+    
+    
+    obj.figureHandles=[];
+	obj.figureHandles.fig = figure;
 	set(obj.figureHandles.fig ,'CloseRequestFcn', @obj.figCloseAndStopScan );
 
 	%Create axes for each channel
