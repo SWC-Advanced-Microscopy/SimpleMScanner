@@ -163,7 +163,7 @@ classdef  scanAndAcquire_OO < handle
 
             %Read parameters from the default file
             params = readScannerINI(paramFile);
-
+            
             %Set the scan pattern variables
             obj.imSize           = params.waveforms.imSize;
             obj.samplesPerPixel  = params.waveforms.samplesPerPixel;
@@ -179,15 +179,15 @@ classdef  scanAndAcquire_OO < handle
 
             %Set the device ID and connect to the DAQ
             obj.deviceID = params.DAQ.deviceID;
-            obj.shutterLine=params.image.shutterLine;
+            obj.shutterLine=params.DAQ.shutterLine;
             obj.connectToDAQ
 
             %Dependent properties (those that are really read from the DAQ,
             %for the most part) need to be set after the connection to the
             %DAQ has been made.
             obj.sampleRate  = params.DAQ.sampleRate;
-            obj.AIrange     = params.DAQ.AIrange;
             obj.inputChans  = params.DAQ.inputChans; %the channels are added here (see setters, below)
+            obj.AIrange     = params.DAQ.AIrange;
             obj.maxScannerVoltage = params.DAQ.maxScannerVoltage;
 
             % The following settings influence how the data are plotted
@@ -265,6 +265,9 @@ classdef  scanAndAcquire_OO < handle
             % This function is used to stop and restart a scan. 
             % Useful in cases when a scanning parameter is altered and we want this
             % to take effect.
+            if isempty(obj.hDAQ)
+                return
+            end
             if obj.hDAQ.IsRunning
                 obj.stopScan(0)
                 obj.startScan
@@ -494,7 +497,7 @@ classdef  scanAndAcquire_OO < handle
                 return
             end
             obj.fillFraction = val;
-            obj.restartScan
+            obj.restartScan        
         end 
 
     end %close methods
