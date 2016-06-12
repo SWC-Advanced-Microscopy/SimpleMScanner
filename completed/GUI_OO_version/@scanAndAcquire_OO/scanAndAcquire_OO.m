@@ -1,302 +1,263 @@
 classdef  scanAndAcquire_OO < handle
 
-	% Simple class for acquiring data with a 2-photon microscope
-	%
-	% scanAndAcquire_OO(deviceID,'param1',val1,'param2',val2,...)
-	%
-	%
-	% * Purpose
-	% scanAndAcquire_OO is an object-oriented version of scanAndAcquire_Polished.
-	% This function controls scanning and image acquisition of a scanning microscope, such as
-	% a 2-photon microscope. With this class you can create "scanAndAcquire_OO" OBJECT in 
-	% the base workspace. An OBJECT has PROPERTIES and METHODS. In this case, the PROPERTIES 
-	% define the scanning parameters. e.g. the image size, the sample rate, where to save 
-	% the data, etc. The METHODS are functions that operate on those properties. In this 
-	% case the METHODS do things like build the scan waveforms, start scanning, stop 
-	% scanning, etc. 
-	%
-	% The object-oriented approach has some advantages over the procedural approach for 
-	% things like data acquisition and GUIs. The principle advantages are:
-	% a) It's easier to interact with an object at the command when doing DAQ-related
-	%   tasks. The object persists and you start or stop acuisition or change parameters.
-	% b) It's very easy to integrate an object into a GUI.
-	%   
-	% For instance, in the procedural approach (e.g. scanAndAcquire_Polished) you call the 
-	% function with the desired scanning paramaters, the function connects to the acquisition 
-	% hardware and scanning begins. When you stop scanning the connection with the hardware
-	% is broken off. With the object-oriented approach, you make an instance of the object:
-	% >> S = scanAndAcquire_OO('dev1');
-	%
-	% Then you can start scanning like this:
-	% >> S.startScan
-	%
-	% Stop scanning like this:
-	% >> S.stopScan
-	%
-	% Change some settings and restart scanning:
-	% >> S.imSize = 512;
-	% >> S.startScan
-	%
-	% etc...
-	%
-	% For incorporation of this class into a GUI see scannerGUI.m
-	%
-	% 
-	% * Details
-	% The X mirror should be on AO-0
-	% The Y mirror should be on AO-1
-	%
-	%
-	%
-	% * Inputs (required)
-	% hardwareDeviceID - string defining the ID of the DAQ device 
-	%					 see daq.getDevices for finding the ID of your device.
-	%
-	% * Inputs (optional, supplied as param/value pairs)
-	% 'inputChans' - A vector defining which input channels will be used to acquire data 
-	%  				[0 by default, meaning channel 0 only is used to acquire data]
-	% 'saveFname'  - A string defining the relative or absolute path of a file to which data should be written. 
-	%                Data will be written as a TIFF stack. If not supplied, no data are saved to disk. 
-	%				 NOTE: if a TIFF  with this name already exists, data will be appended to it.
-	% 'amplitude'  - The amplitude of the voltage waveform. [2 by default, meaning +/- 2V]
-	% 'imSize'     - The number of pixels in x/y. Square frames only are produced. [256 by default.]
-	% 'sampleRate' - The samples/second for the DAQ to run. [256E3 by default]
-	% 'fillFraction'     - The proportion of the scan range to keep. 1-fillFraction 
-	%	    			   is discarded due to the scanner turn-around. [0.85 by default]
-	% 'samplesPerPixel'  - Number of samples per pixel. [4 by default]
-	% 'scanPattern'  - A string defining whether we do uni or bidirectional scanning: 'uni' or 'bidi'
-	%				 'bidi' by default
-	% 'bidiPhase'    - a scalar that defines the offset in pixels between the outgoing and return lines
-	% 			       in bidirectional scanning. 10 by default. This parameter needs changing often and is sensitive.
-	% 'enableHist'   - A boolean. True by default. If true, overlays an intensity histogram on top of the image.
-	% 'invertSignal' - A boolean. True by default. Set to true if using a PMT with a non-inverting amp. NOTE: different to other functions
-	% 'AIrange'      - A scalar defining the +/- range of the digitiser. Not all values are legal. Default is 2
-	%
-	%
-	%
-	% * Examples
-	% ONE
-	% >> S = scanAndAcquire_OO('Dev1');
-	% >> S.prepareQueueAndBuffer
-	% % Acquire 10 seconds of data
-	% >> S.startScan; pause(10); S.stopScan
-	% >> delete(S) %close down the session
-	%
-	%
-	%
-	% Rob Campbell - Basel 2015
+    % Simple class for acquiring data with a 2-photon microscope
+    %
+    % scanAndAcquire_OO(paramFile)
+    %
+    %
+    % * Purpose
+    % scanAndAcquire_OO is an object-oriented version of scanAndAcquire_Polished.
+    % This function controls scanning and image acquisition of a scanning microscope, such as
+    % a 2-photon microscope. With this class you can create "scanAndAcquire_OO" OBJECT in 
+    % the base workspace. An OBJECT has PROPERTIES and METHODS. In this case, the PROPERTIES 
+    % define the scanning parameters. e.g. the image size, the sample rate, where to save 
+    % the data, etc. The METHODS are functions that operate on those properties. In this 
+    % case the METHODS do things like build the scan waveforms, start scanning, stop 
+    % scanning, etc. 
+    %
+    % The object-oriented approach has some advantages over the procedural approach for 
+    % things like data acquisition and GUIs. The principle advantages are:
+    % a) It's easier to interact with an object at the command when doing DAQ-related
+    %   tasks. The object persists and you start or stop acuisition or change parameters.
+    % b) It's very easy to integrate an object into a GUI.
+    %   
+    % For instance, in the procedural approach (e.g. scanAndAcquire_Polished) you call the 
+    % function with the desired scanning paramaters, the function connects to the acquisition 
+    % hardware and scanning begins. When you stop scanning the connection with the hardware
+    % is broken off. With the object-oriented approach, you make an instance of the object:
+    % >> S = scanAndAcquire_OO;
+    %
+    % Then you can start scanning like this:
+    % >> S.startScan
+    %
+    % And change setting on the fly:
+    % >> S.imSize = 512;
+    % >> S.sampleRate = 2E6;
+    % etc...
+    %
+    % For incorporation of this class into a GUI see scannerGUI.m
+    %
+    % 
+    % * Details
+    % The X mirror should be on AO-0
+    % The Y mirror should be on AO-1
+    %
+    %
+    %
+    % * Inputs
+    % deviceID - string defining the ID of the DAQ device see daq.getDevices for finding the ID of your device.
+    % paramFile - relative or absolute path to an INI file that contains the scan parameters.
+    %
+    %
+    % * Examples
+    % ONE
+    % >> S = scanAndAcquire_OO;
+    % % Acquire 10 seconds of data
+    % >> S.startScan; pause(10); S.stopScan
+    % >> delete(S) %close down the session
+    %
+    %
+    %
+    % Rob Campbell - Basel 2015
 
 
 
-	properties
-		%Properties that hold handles to important objects
-		deviceID  % String holding the device ID of the DAQ board
+    properties
+        %Properties that hold handles to important objects
+        deviceID  % String holding the device ID of the DAQ board
 
-		% Default settings that can be over-ridden by the user to change scan settings
-		% Most of these are set via setters to allow the user to change the values during 
-		% scanning. The setters also contain code to validate the value provided (see below).
+        % Default settings that can be over-ridden by the user to change scan settings
+        % Most of these are set via setters to allow the user to change the values during 
+        % scanning. The setters also contain code to validate the value provided (see below).
 
-		% The following are used to build the galvo waveforms *and* the image
-		samplesPerPixel
-		imSize
-		scanPattern
-		fillFraction
+        % The following are used to build the galvo waveforms *and* the image
+        samplesPerPixel
+        imSize
+        scanPattern
+        fillFraction
 
-		% The scanner amplitude is read only when building the scan waveforms. It isn't used 
-		% in building the image
-		scannerAmplitude
+        % The scanner amplitude is read only when building the scan waveforms. It isn't used 
+        % in building the image
+        scannerAmplitude
 
-		%The following settings are used in determining how the plot is formed but do not affect the waveforms
-		invertSignal %If true, inverts the acquired data before plotting
-		bidiPhase    %The offset between outgoing and reverse scan lines in bidirectional scanning
+        %The following settings are used in determining how the plot is formed but do not affect the waveforms
+        invertSignal %If true, inverts the acquired data before plotting
+        bidiPhase    %The offset between outgoing and reverse scan lines in bidirectional scanning
 
-		saveFname
+        saveFname
 
-		% The shutter is connected to a pre-defined line and is opened 
-		% when scanning starts then closed when scanning stops. 
-        shutterLine = 'port0/line5';
-        shutterOpenTTLState=1;
-        shutterDelay = 0.1 %number of seconds to wait after a shutter event before returning control
-	end %close properties
+        % The shutter is connected to a pre-defined line and is opened 
+        % when scanning starts then closed when scanning stops. 
+        shutterLine
+        shutterOpenTTLState
+        shutterDelay
+    end %close properties
 
     properties (Dependent)
-  		sampleRate % Sample rate of the DAQ board running the scanners and
-		AIrange    % The analog input range over which the DAQ digitizes
-		inputChans % A vector of analog input channel IDs
+        sampleRate % Sample rate of the DAQ board running the scanners and
+        AIrange    % The analog input range over which the DAQ digitizes
+        inputChans % A vector of analog input channel IDs
     end
     
-	properties (Hidden)
-		%Properties that hold handles to important objects
-		hDAQ  	  % The DAQ device object
-		hAI 	  % Analog input channels
+    properties (Hidden)
+        %Properties that hold handles to important objects
+        hDAQ      % The DAQ device object
+        hAI       % Analog input channels
         hDIO      % Session for shutter line
-		numFrames % Counter for number of frames acquired 
-		startTime % Serial date at start of scan
-		getDataListener 		% Listener that pulls in data off the DAQ after each frame
-		queueWaveformsListener 	% Listern that sends galvo waveform data to DAQ buffer
-		figureHandles % Keep figure handles here
+        numFrames % Counter for number of frames acquired 
+        startTime % Serial date at start of scan
+        getDataListener         % Listener that pulls in data off the DAQ after each frame
+        queueWaveformsListener  % Listern that sends galvo waveform data to DAQ buffer
+        figureHandles % Keep figure handles here
         lastFrameEndTime %DAQ time stamp associated with end of last frame
         
-		%Data from the last frame are stored here:
-		imageDataFromLastFrame %an array of size: imageRows x imageCols x numChannels
+        %Data from the last frame are stored here:
+        imageDataFromLastFrame %an array of size: imageRows x imageCols x numChannels
 
-		% A structure populated by prepareQueueAndBuffer
-		scanQueue = struct('galvoWaveformData', [], ...
-							'numFramesInQueue', [], ...
-							'pointsPerLine', [])
+        % A structure populated by prepareQueueAndBuffer
+        scanQueue = struct('galvoWaveformData', [], ...
+                            'numFramesInQueue', [], ...
+                            'pointsPerLine', [])
 
-		%Settings that are unlikely to need changing
-		maxScannerVoltage = 10 
-		minSecondsOfBufferedData = 0.5 %Each time fill the output buffer with at least this many seconds of data to avoid buffer under-runs
-	end %close properties (Hidden)
-
-
-	properties (Access=private)
-		sessionType = 'ni' 		% We will work with NI hardware
-		measurementType = 'Voltage' % We will acquire voltage data 
-		scannerChannels = 0:1	% These are the AO channels to which the scanners are connected [x,y]
-	end %close properties (Access=private)
+        %Settings that are unlikely to need changing
+        maxScannerVoltage = 10 
+        minSecondsOfBufferedData = 0.5 %Each time fill the output buffer with at least this many seconds of data to avoid buffer under-runs
+    end %close properties (Hidden)
 
 
-	events
-		frameAcquired %Listener to signal to other code that a frame has been acquired (see getDataFromDAQ.m)
-	end %close events
+    properties (Access=private)
+        sessionType = 'ni'      % We will work with NI hardware
+        measurementType = 'Voltage' % We will acquire voltage data 
+        scannerChannels = 0:1   % These are the AO channels to which the scanners are connected [x,y]
+    end %close properties (Access=private)
+
+
+    events
+        frameAcquired %Listener to signal to other code that a frame has been acquired (see getDataFromDAQ.m)
+    end %close events
 
 
 
-	methods
-		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-		%CONSTRUCTOR
-		function obj = scanAndAcquire_OO(hardwareDeviceID,varargin)
-			% function obj = scanAndAcquire_OO(hardwareDeviceID,varargin)
-			%
-			% This method is known as a "constructor". It has the same name as the class and is run
-			% when an instance of the object is created. 
-			%
-			% In this case the constructor handles input arguments and then connects to the DAQ
-			if ~ischar(hardwareDeviceID)
-				fprintf('hardwareDeviceID should be a string\n')
-				return
-			end
-			obj.deviceID=hardwareDeviceID;
+    methods
+        % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+        %CONSTRUCTOR
+        function obj = scanAndAcquire_OO(paramFile)
+            % function obj = scanAndAcquire_OO(paramFile)
+            %
+            % This method is known as a "constructor". It has the same name as the class and is run
+            % when an instance of the object is created. 
+            %
+            % In this case the constructor handles input arguments and then connects to the DAQ
 
-			params = inputParser;
-			params.CaseSensitive = false;
-			params.addParameter('inputChans', 	'ai0',	@(x) isnumeric(x));
-			params.addParameter('saveFname',	'',		@(x) ischar(x));
+            %Extract parameters from INI file
+            params = readScannerINI;
 
-			params.addParameter('imSize', 		256,	@(x) isnumeric(x) && isscalar(x));
-			params.addParameter('samplesPerPixel', 4,	@(x) isnumeric(x) && isscalar(x));
-			params.addParameter('fillFraction',	0.85,	@(x) isnumeric(x) && isscalar(x));
-			params.addParameter('scanPattern',	'bidi',	@(x) ischar(x));
-			params.addParameter('bidiPhase', 	10,		@(x) isnumeric(x) && isscalar(x));
-			params.addParameter('scannerAmplitude', 2, 	@(x) isnumeric(x) && isscalar(x));
-			params.addParameter('invertSignal', false,  @(x) islogical (x) || x==0 || x==1);
+            %Set the scan pattern variables
+            obj.imSize           = params.waveforms.imSize;
+            obj.samplesPerPixel  = params.waveforms.samplesPerPixel;
+            obj.fillFraction     = params.waveforms.fillFraction;
+            obj.scanPattern      = params.waveforms.scanPattern;
 
-			%The following parameters have getters and setters. Changing them
-			%during scanning will stop and re-start the acquisiiton with new parameters.
-			params.addParameter('sampleRate', 0.512E6,  @(x) isnumeric(x) && isscalar(x));
-			params.addParameter('AIrange',    2.0, 		@(x) isnumeric(x) && isscalar(x));
+            obj.scannerAmplitude = params.waveforms.scannerAmplitude;
 
-			%Process the input arguments in varargin using the inputParser object we just built
-			params.parse(varargin{:});
+            if ~obj.checkScanParams %This method returns false if the scan prameter settings are not valid
+                fprintf('\n PLEASE CHECK YOUR SCANNER SETTINGS then run connectToDAQ\n\n')
+                return
+            end
 
-			%Extract values from the inputParser
-			obj.saveFname 		=  params.Results.saveFname;
-			obj.imSize 			= params.Results.imSize;
-			obj.AIrange    		= params.Results.AIrange;
-			obj.samplesPerPixel = params.Results.samplesPerPixel;
-			obj.fillFraction 	= params.Results.fillFraction;
-			obj.scanPattern 	= params.Results.scanPattern;
-			obj.bidiPhase 		= params.Results.bidiPhase;
-			obj.scannerAmplitude = params.Results.scannerAmplitude;
-			obj.invertSignal = params.Results.invertSignal;
+            %Set the device ID and connect to the DAQ
+            obj.deviceID = params.DAQ.deviceID;
+            obj.shutterLine=params.image.shutterLine;
+            obj.connectToDAQ
 
-			if ~obj.checkScanParams %This method returns false if the scan prameter settings are not valid
-				fprintf('\n PLEASE CHECK YOUR SCANNER SETTINGS then run connectToDAQ\n\n')
-				return
-			end
-
-			obj.connectToDAQ
             %Dependent properties (those that are really read from the DAQ,
             %for the most part) need to be set after the connection to the
             %DAQ has been made.
-			obj.sampleRate 	= params.Results.sampleRate;
-			obj.AIrange = params.Results.AIrange;
-			obj.inputChans = params.Results.inputChans; %the channels are added here (see setters, below)
-		end %close constructor
+            obj.sampleRate  = params.DAQ.sampleRate;
+            obj.AIrange     = params.DAQ.AIrange;
+            obj.inputChans  = params.Results.inputChans; %the channels are added here (see setters, below)
+
+
+            % The following settings influence how the data are plotted
+            obj.invertSignal = params.image.invertSignal;
+            obj.bidiPhase    = params.image.bidiPhase;
+
+            %The following settings influence how the shutter behaves
+            obj.shutterOpenTTLState = params.shutter.shutterOpenTTLState;
+            obj.shutterDelay        = params.shutter.shutterDelay;
+    end %close constructor
 
 
 
-		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-		%DESTRUCTOR
-		function delete(obj)
-			% The destructor is run when the object is deleted
-			obj.stopAndDisconnectDAQ; %stop and don't report the number of acquired frames
-			delete(obj.getDataListener)
-			delete(obj.queueWaveformsListener)
+        % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+        %DESTRUCTOR
+        function delete(obj)
+            % The destructor is run when the object is deleted
+            obj.stopAndDisconnectDAQ; %stop and don't report the number of acquired frames
+            delete(obj.getDataListener)
+            delete(obj.queueWaveformsListener)
             
             if ~isempty(obj.figureHandles)
                 delete(obj.figureHandles.fig)
             end
-		end %close destructor
+        end %close destructor
 
 
 
 
-		% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-		% Short methods follow. Longer ones in standalone .m files in the "@" directory
-		function startScan(obj)
-			% function startScan(obj,setupFreshFigWindow)
-			% Start scanning 
+        % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+        % Short methods follow. Longer ones in standalone .m files in the "@" directory
+        function startScan(obj)
+            % function startScan(obj,setupFreshFigWindow)
+            % Start scanning 
 
-			%Check if running before carrying on
-			if obj.hDAQ.IsRunning
-				return
-			end
+            %Check if running before carrying on
+            if obj.hDAQ.IsRunning
+                return
+            end
 
             obj.setUpFigureWindow %Only runs if the figure window is not already open
 
             obj.openShutter
-			obj.prepareQueueAndBuffer %TODO: test if data have been queued or just run this each time?
+            obj.prepareQueueAndBuffer %TODO: test if data have been queued or just run this each time?
 
-			obj.startTime=now;
-			obj.numFrames=0;
-			obj.hDAQ.startBackground %start the acquisition in the background
-		end %close startScan
+            obj.startTime=now;
+            obj.numFrames=0;
+            obj.hDAQ.startBackground %start the acquisition in the background
+        end %close startScan
 
-		function stopScan(obj,reportFramesAcquired)
-			% function stopScan(obj,reportFramesAcquired)
+        function stopScan(obj,reportFramesAcquired)
+            % function stopScan(obj,reportFramesAcquired)
 
-			%Check if now running before carrying on
-			if ~obj.hDAQ.IsRunning
-				return
-			end
+            %Check if now running before carrying on
+            if ~obj.hDAQ.IsRunning
+                return
+            end
 
-			if nargin<2
-				reportFramesAcquired=true;
-			end
+            if nargin<2
+                reportFramesAcquired=true;
+            end
 
-			obj.hDAQ.stop; 
+            obj.hDAQ.stop; 
             obj.closeShutter
-			if reportFramesAcquired
-				if obj.numFrames==0
-					fprintf('\nSomething went wrong. No frames were acquired.\n')
-				else
-					fprintf('Acquired %d frames in %0.1f seconds\n', obj.numFrames, (now-obj.startTime)*60^2*24)
-				end
-			end
-		end %close stopScan
+            if reportFramesAcquired
+                if obj.numFrames==0
+                    fprintf('\nSomething went wrong. No frames were acquired.\n')
+                else
+                    fprintf('Acquired %d frames in %0.1f seconds\n', obj.numFrames, (now-obj.startTime)*60^2*24)
+                end
+            end
+        end %close stopScan
 
-		function restartScan(obj)
-			% This function is used to stop and restart a scan. 
-			% Useful in cases when a scanning parameter is altered and we want this
-			% to take effect.
-			if obj.hDAQ.IsRunning
-				obj.stopScan(0)
-				obj.startScan
-			end
-		end %close restartScan
+        function restartScan(obj)
+            % This function is used to stop and restart a scan. 
+            % Useful in cases when a scanning parameter is altered and we want this
+            % to take effect.
+            if obj.hDAQ.IsRunning
+                obj.stopScan(0)
+                obj.startScan
+            end
+        end %close restartScan
         
         function openShutter(obj)
             if ~isempty(obj.hDIO)
@@ -312,103 +273,103 @@ classdef  scanAndAcquire_OO < handle
             end
         end %close closeShutter
             
-		function varargout = fps(obj)
-			% Returns the number of frames per second.
-			% If called with an output argument, the value is returned
-			% and nothing is printed to screen. 
-			if isempty(obj.hDAQ)
-				fprintf('Please connect the DAQ device\n')
-				return
-			end
-			if isempty(obj.scanQueue.galvoWaveformData)
-				fprintf('No queue has been set up. Please run the prepareQueueAndBuffer method.\n')
-				return
-			end
+        function varargout = fps(obj)
+            % Returns the number of frames per second.
+            % If called with an output argument, the value is returned
+            % and nothing is printed to screen. 
+            if isempty(obj.hDAQ)
+                fprintf('Please connect the DAQ device\n')
+                return
+            end
+            if isempty(obj.scanQueue.galvoWaveformData)
+                fprintf('No queue has been set up. Please run the prepareQueueAndBuffer method.\n')
+                return
+            end
 
-			fps = obj.hDAQ.Rate/length(obj.scanQueue.galvoWaveformData);
-			fps = fps * obj.scanQueue.numFramesInQueue;
+            fps = obj.hDAQ.Rate/length(obj.scanQueue.galvoWaveformData);
+            fps = fps * obj.scanQueue.numFramesInQueue;
 
-			if nargout==0
-				fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n', ...
-					obj.imSize, obj.imSize, fps)
-			else
-				varargout{1}=fps;
-			end
-		end %close fps
+            if nargout==0
+                fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n', ...
+                    obj.imSize, obj.imSize, fps)
+            else
+                varargout{1}=fps;
+            end
+        end %close fps
 
-		function scanSettings(obj)
-			%Show the scan settings to screen
-			if isempty(obj.hDAQ)
-				fprintf('Please connect the DAQ device\n')
-				return
-			end
-			if isempty(obj.scanQueue.galvoWaveformData)
-				fprintf('No queue has been set up\n')
-				return
-			end
-			
-			msOfDataInQueue = round( (length(obj.scanQueue.galvoWaveformData)/obj.hDAQ.Rate)*1000 );
-			fprintf('There is %d ms of data in the output queue ',msOfDataInQueue)
-			if obj.scanQueue.numFramesInQueue>1
-				fprintf('(queuing in blocks of %d frames)',obj.scanQueue.numFramesInQueue)
-			end
-			fprintf('\n')
+        function scanSettings(obj)
+            %Show the scan settings to screen
+            if isempty(obj.hDAQ)
+                fprintf('Please connect the DAQ device\n')
+                return
+            end
+            if isempty(obj.scanQueue.galvoWaveformData)
+                fprintf('No queue has been set up\n')
+                return
+            end
+            
+            msOfDataInQueue = round( (length(obj.scanQueue.galvoWaveformData)/obj.hDAQ.Rate)*1000 );
+            fprintf('There is %d ms of data in the output queue ',msOfDataInQueue)
+            if obj.scanQueue.numFramesInQueue>1
+                fprintf('(queuing in blocks of %d frames)',obj.scanQueue.numFramesInQueue)
+            end
+            fprintf('\n')
 
-			obj.fps
-		end %close scanSettings
+            obj.fps
+        end %close scanSettings
 
-		function figCloseAndStopScan(obj,~,~)
-			%Is called when the scan window closes. It stops the scan before closing the window
-			fprintf('Closing window and stopping scan\n')
-			obj.stopScan
-			obj.closeScanWindow
-		end
+        function figCloseAndStopScan(obj,~,~)
+            %Is called when the scan window closes. It stops the scan before closing the window
+            fprintf('Closing window and stopping scan\n')
+            obj.stopScan
+            obj.closeScanWindow
+        end
 
-		function closeScanWindow(obj)
-			% Close the figure window on which the images are being streamed
-			% If a window already exists, we don't make a new one
-			if obj.scanWindowPresent
-				delete(obj.figureHandles.fig)
-			end
-		end
+        function closeScanWindow(obj)
+            % Close the figure window on which the images are being streamed
+            % If a window already exists, we don't make a new one
+            if obj.scanWindowPresent
+                delete(obj.figureHandles.fig)
+            end
+        end
 
-		function windowPresent = scanWindowPresent(obj)
-			% Return true if a valid scan window is present
-			% Return false otherwise
-		    if ~isempty(obj.figureHandles) && ...
-		            isa(obj.figureHandles.fig,'matlab.ui.Figure') && ...
-		            isvalid(obj.figureHandles.fig)
-		        windowPresent = true;
-		    else
-		    	windowPresent = false;
-		    end
-    	end %close scanWindowPresent
+        function windowPresent = scanWindowPresent(obj)
+            % Return true if a valid scan window is present
+            % Return false otherwise
+            if ~isempty(obj.figureHandles) && ...
+                    isa(obj.figureHandles.fig,'matlab.ui.Figure') && ...
+                    isvalid(obj.figureHandles.fig)
+                windowPresent = true;
+            else
+                windowPresent = false;
+            end
+        end %close scanWindowPresent
 
-		% Getters and setters for properties which require connected DAQ objects to be updated.
-		% A setter is run when a value is assigned to a property. It modifies the DAQ object.
-		% The getters read back a property from the DAQ object (obj.hDAQ)
+        % Getters and setters for properties which require connected DAQ objects to be updated.
+        % A setter is run when a value is assigned to a property. It modifies the DAQ object.
+        % The getters read back a property from the DAQ object (obj.hDAQ)
 
-		%AIrange
-		function set.AIrange(obj,val)
-			% Sets the analog input range (the range over which the DAQ digitizes)
-			% If the acquisition is running, it is first stopped, the range changed,
-			% then it is restarted.
-			if isempty(obj.hAI)
-				return
-			end
-			running = obj.hDAQ.IsRunning;
-			if running
-				obj.stopScan
-			end
+        %AIrange
+        function set.AIrange(obj,val)
+            % Sets the analog input range (the range over which the DAQ digitizes)
+            % If the acquisition is running, it is first stopped, the range changed,
+            % then it is restarted.
+            if isempty(obj.hAI)
+                return
+            end
+            running = obj.hDAQ.IsRunning;
+            if running
+                obj.stopScan
+            end
 
-			for ii=1:length(obj.hAI)
-				obj.hAI(ii).Range = [-val,val];
-			end
+            for ii=1:length(obj.hAI)
+                obj.hAI(ii).Range = [-val,val];
+            end
 
-			if running
-				obj.startScan
-			end
-		end
+            if running
+                obj.startScan
+            end
+        end
         function AIrange = get.AIrange(obj)
             if isempty(obj.hDAQ)
                 AIrange=[];
@@ -419,22 +380,22 @@ classdef  scanAndAcquire_OO < handle
         end
 
 
-		%sampleRate
-		function set.sampleRate(obj,val)
-			% sets sampleRate. See set.AIrange, above, for details
-			if isempty(obj.hDAQ)
-				return
-			end
-			running = obj.hDAQ.IsRunning;
-			if running
-				obj.stopScan;
-			end
+        %sampleRate
+        function set.sampleRate(obj,val)
+            % sets sampleRate. See set.AIrange, above, for details
+            if isempty(obj.hDAQ)
+                return
+            end
+            running = obj.hDAQ.IsRunning;
+            if running
+                obj.stopScan;
+            end
 
-			obj.hDAQ.Rate = val;
+            obj.hDAQ.Rate = val;
             %TODO: report frame rate
-			if running
-				obj.startScan;
-			end
+            if running
+                obj.startScan;
+            end
         end
         function sampleRate = get.sampleRate(obj)
             if isempty(obj.hDAQ)
@@ -446,123 +407,123 @@ classdef  scanAndAcquire_OO < handle
 
 
         %input channels
-		function set.inputChans(obj,chansToAdd)
-			if isempty(obj.hDAQ)
-				return
-			end
+        function set.inputChans(obj,chansToAdd)
+            if isempty(obj.hDAQ)
+                return
+            end
 
-			running = obj.hDAQ.IsRunning;
-			if running
-				obj.stopScan
-				obj.closeScanWindow %close the figure window so it's re-drawn with the new channel config
-			end
+            running = obj.hDAQ.IsRunning;
+            if running
+                obj.stopScan
+                obj.closeScanWindow %close the figure window so it's re-drawn with the new channel config
+            end
 
-			%Remove the existing analog input channels
-			chans=find(strncmp('ai',{obj.hDAQ.Channels.ID},2));
-			if ~isempty(chans)
-				obj.hDAQ.removeChannel(chans) %warning: set method should not access other prop
-			end
+            %Remove the existing analog input channels
+            chans=find(strncmp('ai',{obj.hDAQ.Channels.ID},2));
+            if ~isempty(chans)
+                obj.hDAQ.removeChannel(chans) %warning: set method should not access other prop
+            end
 
-			%Add the new channels
-			obj.hAI=obj.hDAQ.addAnalogInputChannel(obj.deviceID, chansToAdd, obj.measurementType); 
-			obj.AIrange = obj.AIrange; %Apply the current analog input range to these new channels (TODO: may be dangerous)
+            %Add the new channels
+            obj.hAI=obj.hDAQ.addAnalogInputChannel(obj.deviceID, chansToAdd, obj.measurementType); 
+            obj.AIrange = obj.AIrange; %Apply the current analog input range to these new channels (TODO: may be dangerous)
 
-			if running
-				obj.startScan
-			end
-		end
-		function inputChans = get.inputChans(obj)
-			%Report the connected analog input channels
-			if isempty(obj.hAI)
+            if running
+                obj.startScan
+            end
+        end
+        function inputChans = get.inputChans(obj)
+            %Report the connected analog input channels
+            if isempty(obj.hAI)
                 inputChans = [];
-				return
-			end
-			inputChans = {obj.hAI.ID};			
-		end		
+                return
+            end
+            inputChans = {obj.hAI.ID};          
+        end     
 
 
-		% The following are setters for the scan waveforms. Each setter will re-start a scan if it's on-going.
-		% The effect of this is to re-build the galvo waveforms and begin scanning with new waveforms.
-		function set.scannerAmplitude(obj,val)
-			if ~isscalar(val) || ~isnumeric(val)
-				return
-			end
-			val = abs(val);
-			if val>10
-				val=10;
-				fprintf('Scanner amplitude capped to 10V\n')
-			end
-			obj.scannerAmplitude = val;
-			obj.restartScan %only restarts if it's already running
-		end
-		function set.samplesPerPixel(obj,val)
-			if ~isscalar(val) || ~isnumeric(val) || val<1
-				return
-			end
-			obj.samplesPerPixel = val;
-			obj.restartScan
-		end
-		function set.imSize(obj,val)
-			if ~isscalar(val) || ~isnumeric(val) || val<1
-				return
-			end
-			obj.imSize = val;
-			obj.restartScan
-		end		
-		function set.scanPattern(obj,val)
-			if ~strcmpi('bidi',val) &&  ~strcmpi('uni',val)
-				return
-			end
-			obj.scanPattern = val;
-			obj.restartScan
-		end	
-		function set.fillFraction(obj,val)
-			if ~isscalar(val) || ~isnumeric(val) || val>1 || val<0
-				return
-			end
-			obj.fillFraction = val;
-			obj.restartScan
-		end	
+        % The following are setters for the scan waveforms. Each setter will re-start a scan if it's on-going.
+        % The effect of this is to re-build the galvo waveforms and begin scanning with new waveforms.
+        function set.scannerAmplitude(obj,val)
+            if ~isscalar(val) || ~isnumeric(val)
+                return
+            end
+            val = abs(val);
+            if val>10
+                val=10;
+                fprintf('Scanner amplitude capped to 10V\n')
+            end
+            obj.scannerAmplitude = val;
+            obj.restartScan %only restarts if it's already running
+        end
+        function set.samplesPerPixel(obj,val)
+            if ~isscalar(val) || ~isnumeric(val) || val<1
+                return
+            end
+            obj.samplesPerPixel = val;
+            obj.restartScan
+        end
+        function set.imSize(obj,val)
+            if ~isscalar(val) || ~isnumeric(val) || val<1
+                return
+            end
+            obj.imSize = val;
+            obj.restartScan
+        end     
+        function set.scanPattern(obj,val)
+            if ~strcmpi('bidi',val) &&  ~strcmpi('uni',val)
+                return
+            end
+            obj.scanPattern = val;
+            obj.restartScan
+        end 
+        function set.fillFraction(obj,val)
+            if ~isscalar(val) || ~isnumeric(val) || val>1 || val<0
+                return
+            end
+            obj.fillFraction = val;
+            obj.restartScan
+        end 
 
-	end %close methods
+    end %close methods
 
-	methods (Hidden)
-		function frame = buildImageFromOneChannel(obj,imData,channelColumn)
-			% function frame = buildImageFromOneChannel(obj,imData,channelColumn)
-			%
-			% Construct a square image from column "channelColumn" in the 
-			% nSamples-by-cChannels array, imData, that has come off the 
-			% acquisition card. Turn-around artifact removed.
+    methods (Hidden)
+        function frame = buildImageFromOneChannel(obj,imData,channelColumn)
+            % function frame = buildImageFromOneChannel(obj,imData,channelColumn)
+            %
+            % Construct a square image from column "channelColumn" in the 
+            % nSamples-by-cChannels array, imData, that has come off the 
+            % acquisition card. Turn-around artifact removed.
 
-			%Average all points from the same pixel
-			frame = imData(:,channelColumn);
-			frame = mean(reshape(frame,obj.samplesPerPixel,[]),1)'; %Average all points from the same pixel
-			%Create a square image of the correct orientation
-			frame = reshape(frame, [], obj.imSize); 
-			frame = rot90(frame);
+            %Average all points from the same pixel
+            frame = imData(:,channelColumn);
+            frame = mean(reshape(frame,obj.samplesPerPixel,[]),1)'; %Average all points from the same pixel
+            %Create a square image of the correct orientation
+            frame = reshape(frame, [], obj.imSize); 
+            frame = rot90(frame);
 
-			if obj.invertSignal
-				frame=-frame;
-			end
-
-
-			%Remove the turn-around artefact 
-			if strcmpi(obj.scanPattern,'bidi')
-				%Flip the even rows if data were acquired bidirectionally
-				frame(2:2:end,:) = fliplr(frame(2:2:end,:));
-
-				frame(1:2:end,:) = circshift(frame(1:2:end,:),-obj.bidiPhase,2);
-				frame(2:2:end,:) = circshift(frame(2:2:end,:), obj.bidiPhase,2);
-
-				frame = fliplr(frame); %To keep it in the same orientation as the uni-directional scan
-				frame = frame(:,1+obj.bidiPhase:end-obj.bidiPhase); %Trim the turnaround on one edge (BADLY)
-			else
-				frame = frame(:,end-obj.imSize+1:end); %Trim the turnaround on one edge
-			end
-
-		end %close buildImageFromOneChannel
+            if obj.invertSignal
+                frame=-frame;
+            end
 
 
-	end %close hidden methods
+            %Remove the turn-around artefact 
+            if strcmpi(obj.scanPattern,'bidi')
+                %Flip the even rows if data were acquired bidirectionally
+                frame(2:2:end,:) = fliplr(frame(2:2:end,:));
+
+                frame(1:2:end,:) = circshift(frame(1:2:end,:),-obj.bidiPhase,2);
+                frame(2:2:end,:) = circshift(frame(2:2:end,:), obj.bidiPhase,2);
+
+                frame = fliplr(frame); %To keep it in the same orientation as the uni-directional scan
+                frame = frame(:,1+obj.bidiPhase:end-obj.bidiPhase); %Trim the turnaround on one edge (BADLY)
+            else
+                frame = frame(:,end-obj.imSize+1:end); %Trim the turnaround on one edge
+            end
+
+        end %close buildImageFromOneChannel
+
+
+    end %close hidden methods
 
 end %close scanAndAcquire_OO
