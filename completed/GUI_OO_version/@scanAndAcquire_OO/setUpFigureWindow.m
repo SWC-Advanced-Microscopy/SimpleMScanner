@@ -3,9 +3,7 @@ function setUpFigureWindow(obj)
     % only do this if the window does not currently exist
 
     %If a window already exists, we don't make a new one
-    if ~isempty(obj.figureHandles) && ...
-            isa(obj.figureHandles.fig,'matlab.ui.Figure') && ...
-            isvalid(obj.figureHandles.fig)
+    if obj.scanWindowPresent
         return
     end
     

@@ -92,25 +92,28 @@ classdef  scanAndAcquire_OO < handle
 		%Properties that hold handles to important objects
 		deviceID  % String holding the device ID of the DAQ board
 
-		%Default settings that can be over-ridden by the user to change scan settings
-		inputChans = 0
-		sampleRate = 512E3
-		AIrange=2
+		% Default settings that can be over-ridden by the user to change scan settings
+		% The following are used to build the galvo waveoforms and the image
 		samplesPerPixel = 4
 		imSize = 256
-		invertSignal=true
 		scannerAmplitude = 2
-		fillFraction = 0.85
 		scanPattern = 'bidi'
+		fillFraction = 0.85
 		bidiPhase = 10
-		saveFname =  ''
-        
+		invertSignal = false
+
+		saveFname =  ''        
+
+		% The shutter is connected to a pre-defined line and is opened 
+		% when scanning starts then closed when scanning stops. 
         shutterLine = 'port0/line5';
         shutterOpenTTLState=1;
 	end %close properties
 
     properties (Dependent)
-  		sampleRate
+  		sampleRate % Sample rate of the DAQ board running the scanners and
+		AIrange    % The analog input range over which the DAQ digitizes
+		inputChans % A vector of analog input channel IDs
     end
     
 	properties (Hidden)
@@ -170,28 +173,29 @@ classdef  scanAndAcquire_OO < handle
 
 			params = inputParser;
 			params.CaseSensitive = false;
-			params.addParameter('inputChans',	 	obj.inputChans,		@(x) isnumeric(x));
+			params.addParameter('inputChans',	 	'ai0',				@(x) isnumeric(x));
 			params.addParameter('saveFname',		obj.saveFname,		@(x) ischar(x));
 			params.addParameter('imSize', 			obj.imSize,			@(x) isnumeric(x) && isscalar(x));
 			params.addParameter('samplesPerPixel', 	obj.samplesPerPixel,@(x) isnumeric(x) && isscalar(x));
-			params.addParameter('sampleRate',		obj.sampleRate,		@(x) isnumeric(x) && isscalar(x));
 			params.addParameter('fillFraction', 	obj.fillFraction,	@(x) isnumeric(x) && isscalar(x));
 			params.addParameter('scanPattern',		obj.scanPattern,	@(x) ischar(x));
 			params.addParameter('bidiPhase', 		obj.bidiPhase,		@(x) isnumeric(x) && isscalar(x));
 			params.addParameter('scannerAmplitude', obj.scannerAmplitude, @(x) isnumeric(x) && isscalar(x));
-			params.addParameter('invertSignal', false, @(x) islogical (x) || x==0 || x==1);
-			params.addParameter('AIrange', 2,  @(x) isnumeric(x) && isscalar(x));
+			params.addParameter('invertSignal', obj.invertSignal, @(x) islogical (x) || x==0 || x==1);
+
+			%The following parameters have getters and setters. Changing them
+			%during scanning will stop and re-start the acquisiiton with new parameters.
+			params.addParameter('sampleRate', 0.512E6,  @(x) isnumeric(x) && isscalar(x));
+			params.addParameter('AIrange',    2.0, 		@(x) isnumeric(x) && isscalar(x));
 
 			%Process the input arguments in varargin using the inputParser object we just built
 			params.parse(varargin{:});
 
 			%Extract values from the inputParser
-			obj.inputChans		= params.Results.inputChans;
 			obj.saveFname 		=  params.Results.saveFname;
 			obj.imSize 			= params.Results.imSize;
 			obj.AIrange    		= params.Results.AIrange;
 			obj.samplesPerPixel = params.Results.samplesPerPixel;
-			obj.sampleRate 		= params.Results.sampleRate;
 			obj.fillFraction 	= params.Results.fillFraction;
 			obj.scanPattern 	= params.Results.scanPattern;
 			obj.bidiPhase 		= params.Results.bidiPhase;
@@ -204,7 +208,12 @@ classdef  scanAndAcquire_OO < handle
 			end
 
 			obj.connectToDAQ
-
+            %Dependent properties (those that are really read from the DAQ,
+            %for the most part) need to be set after the connection to the
+            %DAQ has been made.
+			obj.sampleRate 	= params.Results.sampleRate;
+			obj.AIrange = params.Results.AIrange;
+			obj.inputChans = params.Results.inputChans; %the channels are added here (see setters, below)
 		end %close constructor
 
 
@@ -340,52 +349,125 @@ classdef  scanAndAcquire_OO < handle
 			%Is called when the scan window closes. It stops the scan before closing the window
 			fprintf('Closing window and stopping scan\n')
 			obj.stopScan
-			delete(obj.figureHandles.fig)
+			obj.closeScanWindow
 		end
 
+		function closeScanWindow(obj)
+			% Close the figure window on which the images are being streamed
+			% If a window already exists, we don't make a new one
+			if obj.scanWindowPresent
+				delete(obj.figureHandles.fig)
+			end
+		end
 
-		% Setters for properties which require connected DAQ objects to be updated.
-		% A setter is run when a value is assigned to a property. 
+		function windowPresent = scanWindowPresent(obj)
+			% Return true if a valid scan window is present
+			% Return false otherwise
+		    if ~isempty(obj.figureHandles) && ...
+		            isa(obj.figureHandles.fig,'matlab.ui.Figure') && ...
+		            isvalid(obj.figureHandles.fig)
+		        windowPresent = true;
+		    else
+		    	windowPresent = false;
+		    end
+    	end %close scanWindowPresent
 
+		% Getters and setters for properties which require connected DAQ objects to be updated.
+		% A setter is run when a value is assigned to a property. It modifies the DAQ object.
+		% The getters read back a property from the DAQ object (obj.hDAQ)
+
+		%AIrange
 		function set.AIrange(obj,val)
-			obj.AIrange = val;
+			% Sets the analog input range (the range over which the DAQ digitizes)
+			% If the acquisition is running, it is first stopped, the range changed,
+			% then it is restarted.
 			if isempty(obj.hAI)
 				return
 			end
-				
+			running = obj.hDAQ.IsRunning;
+			if running
+				obj.stopScan
+			end
+
 			for ii=1:length(obj.hAI)
-				%Set the digitization range
-				obj.hAI(ii).Range = [-obj.AIrange,obj.AIrange];
+				obj.hAI(ii).Range = [-val,val];
+			end
+
+			if running
+				obj.startScan
 			end
 		end
+        function AIrange = get.AIrange(obj)
+            if isempty(obj.hDAQ)
+                AIrange=[];
+                return
+            end
+            AIrange = obj.hAI(1).Range.Max; %all inputs have the same range (see setter, above)
+            %AIrange = abs(AIrange);
+        end
 
-		function set.inputChans(obj,val)
-			obj.inputChans=val;
+
+		%sampleRate
+		function set.sampleRate(obj,val)
+			% sets sampleRate. See set.AIrange, above, for details
 			if isempty(obj.hDAQ)
 				return
 			end
+			running = obj.hDAQ.IsRunning;
+			if running
+				obj.stopScan
+			end
+
+			obj.hDAQ.Rate = val;
+
+			if running
+				obj.startScan
+			end
+        end
+        function sampleRate = get.sampleRate(obj)
+            if isempty(obj.hDAQ)
+                sampleRate=[];
+                return
+            end
+            sampleRate = obj.hDAQ.Rate;
+        end
+
+
+        %input channels
+		function set.inputChans(obj,val)
+			obj.inputChans=val;
+			if isempty(obj.hDAQ) %warning: set method should not access other prop
+				return
+			end
+
+			running = obj.hDAQ.IsRunning;
+			if running
+				obj.stopScan
+				obj.closeScanWindow %close the figure window so it's re-drawn with the new channel config
+			end
 
 			%Remove the existing analog input channels
-			chans=strmatch('ai',{obj.hDAQ.Channels.ID});
+			chans=strncmp('ai',{obj.hDAQ.Channels.ID},2);
 			if ~isempty(chans)
-				obj.hDAQ.removeChannel(chans)
+				obj.hDAQ.removeChannel(chans) %warning: set method should not access other prop
 			end
 
 			%Add the new channels
 			obj.hAI=obj.hDAQ.addAnalogInputChannel(obj.deviceID, obj.inputChans, obj.measurementType); 
 			obj.AIrange = obj.AIrange; %Apply the current analog input range to these new channels (TODO: may be dangerous)
-		end
 
-		function set.sampleRate(obj,val)
-			obj.sampleRate=val;
-			if isempty(obj.hDAQ)
+			if running
+				obj.startScan
+			end
+
+		end
+		function inputChans = get.inputChans(obj)
+			%Report the connected analog input channels
+			if isempty(obj.hDAQ) %warning: set method should not access other prop
 				return
 			end
-			obj.hDAQ.stop;
-			obj.hDAQ.Rate = obj.sampleRate;
-		end			
-
-
+			inputChans = {obj.hAI.ID};			
+		end		
 
 	end %close methods
 
