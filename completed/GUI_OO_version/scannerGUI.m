@@ -154,20 +154,18 @@ classdef scannerGUI < handle
 				obj.scanner.scanPattern='uni';
 				obj.gui.bidiPhase.Enable='off';
 			end
-			obj.scanner.restartScan
 		end %close bidiScan
 
 		function bidiPhaseUpdate(obj)
 			%This callback function is run when the user updates the bidirectional phase edit box
 			newBidiPhase = obj.gui.bidiPhase.String;
-			newBidiPhaseAsNumber = str2num(newBidiPhase);
+			newBidiPhaseAsNumber = str2double(newBidiPhase);
 
 			%Report to command line if the new bidi phase value is not a number
 			if isempty(newBidiPhaseAsNumber)
 				fprintf('\n ** The value %s is not a number ** \n\n',newBidiPhase)
 				return
 			end
-
 			obj.scanner.bidiPhase = newBidiPhaseAsNumber;
 		end %close bidiPhaseUpdate
 
