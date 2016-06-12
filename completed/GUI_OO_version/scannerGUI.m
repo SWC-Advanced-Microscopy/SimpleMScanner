@@ -142,11 +142,7 @@ classdef scannerGUI < handle
 	
 				%update the reporting of the save state and the save dialog
 				obj.updateSaveUIelements
-		end
-
-
-
-
+            end
 		end	%close startStopScan
 
 		function bidiScan(obj)

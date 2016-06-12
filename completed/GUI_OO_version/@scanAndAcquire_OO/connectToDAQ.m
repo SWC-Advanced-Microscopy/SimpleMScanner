@@ -22,11 +22,6 @@ function connectToDAQ(obj,deviceID)
 	obj.hDAQ = daq.createSession(obj.sessionType);
 	obj.sampleRate = obj.sampleRate; %Calls the setter
 
-
-	%Add one or more analog input channels for the PMT signals and sets the analog input range
-	obj.inputChans = obj.inputChans; %Runs the setter in scanAndAcquire_OO
-
-
 	%Add a listener to get data back after each frame
 	obj.getDataListener = addlistener(obj.hDAQ, 'DataAvailable', @(src,event) obj.getDataFromDAQ(event)); 
 

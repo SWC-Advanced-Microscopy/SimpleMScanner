@@ -108,6 +108,7 @@ classdef  scanAndAcquire_OO < handle
 		% when scanning starts then closed when scanning stops. 
         shutterLine = 'port0/line5';
         shutterOpenTTLState=1;
+        shutterDelay = 0.1 %number of seconds to wait after a shutter event before returning control
 	end %close properties
 
     properties (Dependent)
@@ -291,12 +292,14 @@ classdef  scanAndAcquire_OO < handle
         function openShutter(obj)
             if ~isempty(obj.hDIO)
                 obj.hDIO.outputSingleScan(obj.shutterOpenTTLState)
+                pause(obj.shutterDelay)
             end
         end %close openShutter
         
         function closeShutter(obj)
             if ~isempty(obj.hDIO)
                 obj.hDIO.outputSingleScan(~obj.shutterOpenTTLState)
+                pause(obj.shutterDelay)
             end
         end %close closeShutter
             
@@ -415,13 +418,13 @@ classdef  scanAndAcquire_OO < handle
 			end
 			running = obj.hDAQ.IsRunning;
 			if running
-				obj.stopScan
+				obj.stopScan;
 			end
 
 			obj.hDAQ.Rate = val;
-
+            %TODO: report frame rate
 			if running
-				obj.startScan
+				obj.startScan;
 			end
         end
         function sampleRate = get.sampleRate(obj)
@@ -434,9 +437,8 @@ classdef  scanAndAcquire_OO < handle
 
 
         %input channels
-		function set.inputChans(obj,val)
-			obj.inputChans=val;
-			if isempty(obj.hDAQ) %warning: set method should not access other prop
+		function set.inputChans(obj,chansToAdd)
+			if isempty(obj.hDAQ)
 				return
 			end
 
@@ -447,13 +449,13 @@ classdef  scanAndAcquire_OO < handle
 			end
 
 			%Remove the existing analog input channels
-			chans=strncmp('ai',{obj.hDAQ.Channels.ID},2);
+			chans=find(strncmp('ai',{obj.hDAQ.Channels.ID},2));
 			if ~isempty(chans)
 				obj.hDAQ.removeChannel(chans) %warning: set method should not access other prop
 			end
 
 			%Add the new channels
-			obj.hAI=obj.hDAQ.addAnalogInputChannel(obj.deviceID, obj.inputChans, obj.measurementType); 
+			obj.hAI=obj.hDAQ.addAnalogInputChannel(obj.deviceID, chansToAdd, obj.measurementType); 
 			obj.AIrange = obj.AIrange; %Apply the current analog input range to these new channels (TODO: may be dangerous)
 
 			if running
@@ -463,7 +465,8 @@ classdef  scanAndAcquire_OO < handle
 		end
 		function inputChans = get.inputChans(obj)
 			%Report the connected analog input channels
-			if isempty(obj.hDAQ) %warning: set method should not access other prop
+			if isempty(obj.hAI)
+                inputChans = [];
 				return
 			end
 			inputChans = {obj.hAI.ID};			
