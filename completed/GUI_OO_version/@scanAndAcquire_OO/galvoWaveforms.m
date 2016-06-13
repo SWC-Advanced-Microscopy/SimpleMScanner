@@ -75,13 +75,14 @@ function dataToPlay = galvoWaveforms(obj,verbose)
 		xWaveform = [xWaveform,fliplr(xWaveform)];
 	end
 
-	xWaveform = repmat(xWaveform,1,length(yWaveform)/length(xWaveform));
-
-	if length(xWaveform) ~= length(yWaveform)
-		error('xWaveform and yWaveform are not the same length. The x is %d long and the y %d long',...
-			length(xWaveform), length(yWaveform));
-	end
-
+	xWaveform = repmat(xWaveform,1,ceil(length(yWaveform)/length(xWaveform)));
+    
+    if length(xWaveform) < length(yWaveform)
+        error('xWaveform is shorter than yWaveform. The x is %d long and the y %d long',...
+            length(xWaveform), length(yWaveform));
+    end
+    xWaveform = xWaveform(1:length(yWaveform));
+    
 	if verbose
 		fprintf('Final waveforms have a length of %d\n',length(xWaveform))
 	end
