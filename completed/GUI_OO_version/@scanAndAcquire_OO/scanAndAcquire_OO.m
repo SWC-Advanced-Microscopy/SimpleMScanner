@@ -430,8 +430,9 @@ classdef  scanAndAcquire_OO < handle
             running = obj.hDAQ.IsRunning;
             if running
                 obj.stopScan
-                obj.closeScanWindow %close the figure window so it's re-drawn with the new channel config
             end
+            obj.closeScanWindow %close the figure window so it's re-drawn with the new channel config
+
 
             %Remove the existing analog input channels
             chans=find(strncmp('ai',{obj.hDAQ.Channels.ID},2));

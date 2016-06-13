@@ -2,7 +2,7 @@ classdef scannerGUI < handle
 
 % The scannerGUI class is used to build a GUI that controls scanAndAcquire_OO
 %
-% scannerGUI(deviceID,'param1',val1,'param2',val2,...)
+% scannerGUI(paramFile)
 % 
 % Purpose
 % scannerGUI is a GUI wrapper for scanAndAcquire_OO. It is not complete. 
@@ -17,13 +17,12 @@ classdef scannerGUI < handle
 % There are two ways of starting scannerGUI. One is to first create an instance of 
 % scanAndAcquire_OO and then to call scannerGUI. In this scenario, scannerGUI finds
 % the scanAndAcquire_OO object in the base workspace and connects to it:
-% >> S=scanAndAcquire_OO('Dev1');
-% >> scannerGUI;
+% >> S=scanAndAcquire_OO;
+% >> S=scannerGUI;
 %
-% The other scenario is to call scannerGUI using the same input arguments as would for 
-% scanAndAcquire_OO. If you do this, an instance of scanAndAcquire_OO is created and
-% then the GUI loads:
-% >> S = scannerGUI('Dev1');
+% The other scenario is to call scannerGUI directly. If you do this, an instance 
+% of scanAndAcquire_OO is created and then the GUI loads:
+% >> S = scannerGUI;
 %
 %
 % Rob Campbell - Basel 2016
@@ -46,53 +45,47 @@ classdef scannerGUI < handle
 
         % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
         %CONSTRUCTOR
-        function obj=scannerGUI(deviceID,varargin)
+        function obj=scannerGUI(paramFile)
+            if nargin<1
+                paramFile=[];
+            end
             
             %Import BakingTray object from base workspace           
             obj.scanner = getScannerObjectFromBaseWorkSpace; %function in "private" directory
             
             if isempty(obj.scanner)
-                if nargin<1
-                    fprintf('** Please supply device ID or create scanner object in base work space **\n')
-                    return
-                end
-                
                 obj.gui.statusBar.String = 'Creating instance of scanAndAcquire_OO';
                 disp(obj.gui.statusBar.String)
-                obj.scanner = scanAndAcquire_OO(deviceID,varargin{:});
+                obj.scanner = scanAndAcquire_OO(paramFile);
             end
 
             if isempty(obj.scanner)
                 error('FAILED TO CONNECT TO SCANNER -- obj.scanner is empty')
             end
 
-
             obj.gui = scannerGUI_fig; %Build GUI and return handles
 
-            % Write the current save file name (if any) and bidirectional phase delay
-            % into the checkboxes.
-            obj.gui.bidiPhase.String = obj.scanner.bidiPhase;
-            if strcmpi(obj.scanner.scanPattern,'bidi')
-                obj.gui.bidi.Value=true;
-                obj.gui.bidiPhase.Enable='on';
-            else
-                obj.gui.bidi.Value=false;
-                obj.gui.bidiPhase.Enable='off';
-            end
+            %Update the GUI UI based pn the state of the scanner object
+            obj.updateGUIfromScanner
 
-            obj.gui.saveFname.String = obj.scanner.saveFname;
-            if isempty(obj.gui.saveFname.String)
-                obj.gui.save.Enable='off';
-            else
-                obj.gui.save.Enable='on';
-            end
 
             %Attach callback functions to UI interactions
             set(obj.gui.startStopScan,'Callback',@(~,~) obj.startStopScan);
             set(obj.gui.bidi,'Callback',@(~,~) obj.bidiScan);
             set(obj.gui.bidiPhase,'Callback',@(~,~) obj.bidiPhaseUpdate);
             set(obj.gui.saveFname,'Callback',@(~,~) obj.saveFnameUpdate);
-
+            set(obj.gui.invert,'Callback', @(~,~) obj.invert)
+            set(obj.gui.AIrange,'Callback', @(~,~) obj.AIrange)
+            set(obj.gui.sampRate,'Callback', @(~,~) obj.sampleRate)
+            set(obj.gui.samplesPix,'Callback', @(~,~) obj.samplesPix)           
+            set(obj.gui.imSize,'Callback', @(~,~) obj.imSize)
+            set(obj.gui.scannerAmp,'Callback', @(~,~) obj.scannerAmp)
+            set(obj.gui.fillFraction,'Callback', @(~,~) obj.fillFraction)
+            set(obj.gui.ai0,'Callback', @(~,~) obj.ai0)
+            set(obj.gui.ai1,'Callback', @(~,~) obj.ai1)
+            set(obj.gui.ai2,'Callback', @(~,~) obj.ai2)
+            set(obj.gui.ai3,'Callback', @(~,~) obj.ai3)
+            
             %Run method scannerGUIClose if the GUI's figure window is closed by the user
             set(obj.gui.hFig,'CloseRequestFcn', @obj.scannerGUIClose);
 
@@ -145,6 +138,11 @@ classdef scannerGUI < handle
             end
         end %close startStopScan
 
+        function invert(obj)
+            %This callback function is run when the user clicks the invert checkbox
+            obj.scanner.invertSignal = obj.gui.invert.Value;
+        end %close invert
+
         function bidiScan(obj)
             %This callback function is run when the user clicks the bidi checkbox
             if obj.gui.bidi.Value
@@ -153,15 +151,6 @@ classdef scannerGUI < handle
             else
                 obj.scanner.scanPattern='uni';
                 obj.gui.bidiPhase.Enable='off';
-            end
-        end %close bidiScan
-
-        function invert(obj)
-            %This callback function is run when the user clicks the invert checkbox
-            if obj.gui.invert.Value
-                obj.scanner.invert=true;
-            else
-                obj.scanner.invert=false;
             end
         end %close bidiScan
 
@@ -227,7 +216,7 @@ classdef scannerGUI < handle
                 fprintf('\n ** The value %s is not a number ** \n\n',newsamplesPix)
                 return
             end
-            obj.scanner.sampleRate = newsamplesPixAsNumber;
+            obj.scanner.samplesPerPixel = newsamplesPixAsNumber;
         end %close samplesPix
 
         function scannerAmp(obj)
@@ -242,7 +231,7 @@ classdef scannerGUI < handle
 
         function fillFraction(obj)
             newfillFraction = obj.gui.fillFraction.String;
-            newfillFractionAsNumber = str2double(newsamplesPix);
+            newfillFractionAsNumber = str2double(newfillFraction);
             if isempty(newfillFractionAsNumber)
                 fprintf('\n ** The value %s is not a number ** \n\n',newfillFraction)
                 return
@@ -254,12 +243,18 @@ classdef scannerGUI < handle
 
         %Channels
         function ai0(obj)
-            if obj.gui.ai0.Value
-                
-            else
-                
-            end
+            processInputChannel(obj,'ai0')
         end %close ai0
+        function ai1(obj)
+            processInputChannel(obj,'ai1')
+        end %close ai1
+        function ai2(obj)
+            processInputChannel(obj,'ai2')
+        end %close ai2
+        function ai3(obj)
+            processInputChannel(obj,'ai3')
+        end %close ai3
+
 
 
     end %close methods
@@ -303,9 +298,68 @@ classdef scannerGUI < handle
             obj.gui.statusBar.String = msg;
         end %close frameAcquiredCallBack
 
+
+
+        function updateGUIfromScanner(obj)
+            obj.gui.invert.Value = obj.scanner.invertSignal;
+
+            obj.gui.bidiPhase.String = obj.scanner.bidiPhase;
+            if strcmpi(obj.scanner.scanPattern,'bidi')
+                obj.gui.bidi.Value=true;
+                obj.gui.bidiPhase.Enable='on';
+            else
+                obj.gui.bidi.Value=false;
+                obj.gui.bidiPhase.Enable='off';
+            end
+
+            obj.gui.saveFname.String = obj.scanner.saveFname;
+            if isempty(obj.gui.saveFname.String)
+                obj.gui.save.Enable='off';
+            else
+                obj.gui.save.Enable='on';
+            end
+
+            obj.gui.AIrange.String = obj.scanner.AIrange;
+            obj.gui.sampRate.String = obj.scanner.sampleRate;
+            obj.gui.imSize.String = obj.scanner.imSize;
+            obj.gui.samplesPix.String = obj.scanner.samplesPerPixel;
+            obj.gui.scannerAmp.String = obj.scanner.scannerAmplitude;
+            obj.gui.fillFraction.String = obj.scanner.fillFraction;
+
+            obj.gui.ai0.Value = any(strncmp('ai0',obj.scanner.inputChans,3));
+            obj.gui.ai1.Value = any(strncmp('ai1',obj.scanner.inputChans,3));
+            obj.gui.ai2.Value = any(strncmp('ai2',obj.scanner.inputChans,3));
+            obj.gui.ai3.Value = any(strncmp('ai3',obj.scanner.inputChans,3));
+        end
+
     end %close hidden methods
 
 
 
 end %close scannerGUI
+
+
+
+function processInputChannel(obj,inChan)
+    if obj.gui.(inChan).Value
+        %Add channel
+        if any(strncmpi(inChan,obj.scanner.inputChans,3))
+            return
+        end
+        obj.scanner.inputChans = [obj.scanner.inputChans,inChan];
+    else
+        %Remove channel
+        ind=strncmpi(inChan,obj.scanner.inputChans,3);       
+        if length(ind)==1
+            fprintf('Must have at least one active channel!\n')
+            obj.gui.(inChan).Value=true;
+            return
+        end
+            
+        if any(ind)
+            obj.scanner.inputChans = obj.scanner.inputChans(~ind);
+        end
+    end
+end %close processInputChannel
+
 
