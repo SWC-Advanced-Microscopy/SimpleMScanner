@@ -69,7 +69,8 @@ Currently the scannerGUI provides the following features:
   1. Starts/stops scanning.
   2. Switches back and forth between unidirectional and bidirectional modes.
   3. Allows update of the bidirectional phase delay whilst scanning.
-  4. Saving to disk.
+  4. Most properties of the object can be changed dynamically during scanning via the GUI. 
+  5. Saving to disk.
 
 * The **buildingBlocks** folder contains code snippets to help teach the individual concepts from the above without providing a solution to the whole problem. 
 
