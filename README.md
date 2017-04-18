@@ -59,7 +59,7 @@ It provides the same features as scanAndAcquire_Minimal but adds:
   8. Improved buffering to allow for higher frame rates.
 
 * **scanAndAcquire_OO** - The same features as scanAndAcquire_Polished but in an object-oriented interface. 
-The purpose of this it to contract procedural with object-oriented code.
+The purpose of this it to contrast procedural with object-oriented code.
 
 * **scannerGUI** - A simple GUI wrapper class for scanAndAcquire_OO. 
 This showcases some of the advantages of using object-oriented techniques for data acquisition and GUI-building. 
