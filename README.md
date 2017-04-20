@@ -72,10 +72,11 @@ Currently the scannerGUI provides the following features:
   4. Most properties of the object can be changed dynamically during scanning via the GUI. 
   5. Saving to disk.
 
-* The **buildingBlocks** folder contains code snippets to help teach the individual concepts from the above without providing a solution to the whole problem. 
+
 
 * The repository also contains a folder of utility functions. Currently just one for loading the saved TIFF stacks from disk.
 
+* For basic DAQmx examples and other introductory concepts see [MatlabDAQmx](https://github.com/tenss/MatlabDAQmx)
 
 # Disclaimer
 This software is supplied "as is" and the author(s) are not responsible for hardware damage, blindness, etc, caused by use (or misuse) of this software. 
