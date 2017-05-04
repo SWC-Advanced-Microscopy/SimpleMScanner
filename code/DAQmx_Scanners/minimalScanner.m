@@ -173,6 +173,10 @@ classdef minimalScanner < handle
                 % Set the size of the output buffer
                 obj.hAOTask.cfgSampClkTiming(obj.sampleRate, 'DAQmx_Val_ContSamps', size(obj.waveforms,1));
 
+                if obj.hAOTask.sampClkRate ~= obj.hAITask.sampClkRate
+                    fprintf('WARNING: AI task sample clock rate does not match AO task sample clock rate. Scan lines will precess.\n')
+                end
+
                 % Allow sample regeneration (buffer is circular)
                 obj.hAOTask.set('writeRegenMode', 'DAQmx_Val_AllowRegen');
 
