@@ -12,13 +12,13 @@ classdef basicScanner < handle
     % This class is a more advanced version of minimalScanner.
     %
     % All scanning parameters are hard-coded into the class properties to keep things brief 
-    % and focus on how the acquisition is being done. No superfluous things like fast 
-    % beam-blanking, saving, or even artefact correction and error checks are performed. 
-    % The raw images are just streamed to a figure window. Two important parameters are added
+    % and focus on how the acquisition is being done. Three important parameters are added
     % compared to minimalScanner:
     % 1. The "fillFraction", which is used to remove the turn-around artefact
     % 2. "samplesPerPixel", which is used to average multiple samples per pixel and so improve
     %    image quality. samplesPerPixel should be changed in association with "sampleRate". 
+    % 3. There is also the option to save data data (see below).
+    % In addition, the current frame number is displayed over the image. 
     %
     %
     % Instructions
@@ -70,10 +70,11 @@ classdef basicScanner < handle
     properties (SetAccess=private)
         % These properties are specific to scanning and image construction
         galvoAmp = 2        % Scanner amplitude (defined as peak-to-peak/2) Increasing this increases the area scanned (CAREFUL!)
-        imSize = 256        % Number pixel rows and columns
+        imSize = 128        % Number pixel rows and columns
         invertSigal = 1     % Set to -1 if using a non-inverting amp with a PMT
         waveforms           % The scanner waveforms will be stored here
         fillFraction = 0.85 % 1-fillFraction is considered to be the turn-around time and is excluded from the image
+        samplesPerPixel = 2 % Number of samples to average for each pixel
         saveFname=''
 
         % The following properties are more directly related to setting up the DAQ
@@ -101,10 +102,11 @@ classdef basicScanner < handle
         hFig    % The handle to the figure which shows the data is stored here
         imAxes  % Handle for the image axes
         hIm     % Handle produced by imagesc
-
+        hTitle  % Handle that stores the plot title
 
         correctedPointsPerLine % Actual number of points we will need to collect, this is a fill-fraction-related parameter
         lastFrame % The last acquired frame is stored here
+        currentFrame=1;
     end
 
 
@@ -132,7 +134,8 @@ classdef basicScanner < handle
             %Make an empty axis and fill with a blank image
             obj.imAxes = axes('Parent', obj.hFig, 'Position', [0.05 0.05 0.9 0.9]);
             obj.hIm = imagesc(obj.imAxes,zeros(obj.imSize));
-            set(obj.imAxes, 'XTick', [], 'YTIck', [], 'CLim', [0,obj.AIrange], 'Box', 'on')
+            obj.hTitle = title('');
+            %set(obj.imAxes, 'XTick', [], 'YTIck', [], 'CLim', [0,obj.AIrange], 'Box', 'on')
             axis square
             colormap gray
 
@@ -179,7 +182,7 @@ classdef basicScanner < handle
                 % Configure the sampling rate and the number of samples so that we are reading back
                 % data at the end of each frame 
                 obj.generateScanWaveforms %This will populate the waveforms property
-                obj.hAITask.cfgSampClkTiming(obj.sampleRate,'DAQmx_Val_ContSamps', size(obj.waveforms,1) * 6);
+                obj.hAITask.cfgSampClkTiming(obj.sampleRate,'DAQmx_Val_ContSamps', size(obj.waveforms,1) * 4);
 
                 % Call an anonymous function function to read from the AI buffer and plot the images once per frame
                 obj.hAITask.registerEveryNSamplesEvent(@obj.readAndDisplayLastFrame, size(obj.waveforms,1), false, 'Scaled');
@@ -248,7 +251,7 @@ classdef basicScanner < handle
             % multiply correctedPointsPerLine by the number of samples per pixel.
             samplesPerLine = obj.correctedPointsPerLine*obj.samplesPerPixel;
 
-            yWaveform = linspace(obj.galvoAmp, -obj.galvoAmp, samplesPerLine*obj.imSize^2); 
+            yWaveform = linspace(obj.galvoAmp, -obj.galvoAmp, samplesPerLine*obj.imSize); 
 
             % The X waveform goes from +galvoAmp to -galvoAmp over the course of one line.
             xWaveform = linspace(-obj.galvoAmp, obj.galvoAmp, samplesPerLine); % One line of X
@@ -261,9 +264,7 @@ classdef basicScanner < handle
 
             %Report frame rate to screen
             fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n', ...
-             obj.imSize, obj.imSize, obj.sampleRate/length(obj.waveforms);
-
-
+             obj.imSize, obj.imSize, obj.sampleRate/length(obj.waveforms));
         end %close generateScanWaveforms
 
 
@@ -283,9 +284,13 @@ classdef basicScanner < handle
             % Now keep only "imSize" pixels from each row. This trims off the excess
             % That comes from fill-fractions less than 1. If the fill-fraction is chosen
             % correctly, the X mirror turn-around artefact is now gone. 
-            obj.lastFrame = obj.lastFrame(end-obj.imSize:end,:); 
+            obj.lastFrame = obj.lastFrame(end-obj.imSize+1:end,:); 
 
             obj.hIm.CData = rot90(obj.lastFrame) * obj.invertSigal;
+
+
+            obj.hTitle.String = sprintf('Current Frame: %d',obj.currentFrame);
+            obj.currentFrame=obj.currentFrame+1;
 
             obj.saveLastFrame
         end %close readAndDisplayLastFrame
@@ -293,9 +298,9 @@ classdef basicScanner < handle
 
         function saveLastFrame(obj)
             if ~isempty(obj.saveFname) %Optionally write data to disk
-                im = (im/AIrange) * 2^16 ; %ensure values span 16 bit range
-                im = uint16(im); %Convert to unsigned 16 bit integers. Negative numbers will be gone.
-                imwrite(im, obj.saveFname, 'tiff', ...
+                obj.currentFrame = (obj.currentFrame/obj.AIrange) * 2^16 ; %ensure values span 16 bit range
+                obj.currentFrame = uint16(obj.currentFrame); %Convert to unsigned 16 bit integers. Negative numbers will be gone.
+                imwrite(obj.currentFrame, obj.saveFname, 'tiff', ...
                         'Compression', 'None', ... %Don't compress because this slows IO
                         'WriteMode', 'Append') 
             end

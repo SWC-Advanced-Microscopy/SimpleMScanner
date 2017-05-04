@@ -213,7 +213,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
         % Now keep only "imSize" pixels from each row. This trims off the excess
         % That comes from fill-fractions less than 1. If the fill-fraction is chosen
         % correctly, the X mirror turn-around artefact is now gone. 
-        im = im(end-imSize:end,:); 
+        im = im(end-imSize+1:end,:); 
 
         im = rot90(im);
 

@@ -229,7 +229,7 @@ classdef minimalScanner < handle
 
             %Report frame rate to screen
             fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n', ...
-             obj.imSize, obj.imSize, obj.sampleRate/length(obj.waveforms);
+             obj.imSize, obj.imSize, obj.sampleRate/length(obj.waveforms));
 
         end %close generateScanWaveforms
 
