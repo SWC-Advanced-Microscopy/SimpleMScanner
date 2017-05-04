@@ -54,11 +54,10 @@ classdef minimalScanner < handle
 
     properties
         % This block contains properties specific to scanning and also image construction
-        galvoAmp = 2;        % Scanner amplitude (defined as peak-to-peak/2) Increasing this increases the area scanned (CAREFUL!)
-        imSize = 256;        % Number pixel rows and columns
-        invertSigal = false; % Set to true if using a non-inverting amp with a PMT
-        waveforms            % The scanner waveforms will be stored here
-        lastFrame            % The last frame is stored here
+        galvoAmp = 2        % Scanner amplitude (defined as peak-to-peak/2) Increasing this increases the area scanned (CAREFUL!)
+        imSize = 256        % Number pixel rows and columns
+        invertSigal = 1     % Set to -1 if using a non-inverting amp with a PMT
+        waveforms           % The scanner waveforms will be stored here
     end %close properties block
 
 
@@ -71,14 +70,14 @@ classdef minimalScanner < handle
 
         AIChan = 0 
         AIterminalConfig = 'DAQmx_Val_RSE' %Valid values: 'DAQmx_Val_Cfg_Default', 'DAQmx_Val_RSE', 'DAQmx_Val_NRSE', 'DAQmx_Val_Diff', 'DAQmx_Val_PseudoDiff'
-        AIrange = 2; % Digitise over +/- this range. 
+        AIrange = 2  % Digitise over +/- this range. 
 
         % Properties for the analog output end of things
         hAOTask %The AO task will be kept here
         AOChans = 0:1
 
         % Shared properties
-        sampleRate = 128E3; % The sample rate at which the board runs (Hz)
+        sampleRate = 128E3  % The sample rate at which the board runs (Hz)
 
     end %close properties block
 
@@ -103,21 +102,14 @@ classdef minimalScanner < handle
             % Build the figure window and have it shut off the acquisition when closed.
             % See: basicConcepts/windowCloseFunction.m
             obj.hFig = clf;
-            obj.hFig.Name='Close figure to stop acquisition'; %This is just the OO notation. We could also use the set command.
-            obj.hFig.CloseRequestFcn = @obj.windowCloseFcn;
-
+            set(obj.hFig, 'Name', 'Close figure to stop acquisition', 'CloseRequestFcn', @obj.windowCloseFcn)
 
             %Make an empty axis and fill with a blank image
             obj.imAxes = axes('Parent', obj.hFig, 'Position', [0.05 0.05 0.9 0.9]);
             obj.hIm = imagesc(obj.imAxes,zeros(obj.imSize)) 
-            obj.imAxes.CLim = [0,obj.AIrange];
-
-            obj.imAxes.XTick=[];
-            obj.imAxes.YTick=[];
+            set(obj.imAxes, 'XTick', [], 'YTIck', [], 'CLim', [0,obj.AIrange], 'Box', 'on')
             axis square
-            box on 
             colormap gray
-
 
             % Call a method to connect to the DAQ. If the following line fails, the Tasks are
             % cleaned up gracefully and the object is deleted. This is all done by the method
@@ -126,8 +118,8 @@ classdef minimalScanner < handle
 
 
             % Start the acquisition
-            %obj.startAcquisition
-            %fprintf('Close figure to quit acquisition\n')
+            % obj.start
+            % fprintf('Close figure to quit acquisition\n')
         end % close constructor
 
 
@@ -137,7 +129,7 @@ classdef minimalScanner < handle
 
             fprintf('Tidying up minimalScanner\n')
             obj.hFig.delete %Closes the plot window
-            obj.stopAcquisition % Call the method that stops the DAQmx tasks
+            obj.stop % Call the method that stops the DAQmx tasks
 
             % The tasks should delete automatically (which causes dabs.ni.daqmx.Task.delete to 
             % call DAQmxClearTask on each task) but for paranoia we can delete manually:
@@ -202,15 +194,15 @@ classdef minimalScanner < handle
                 %Tidy up if we fail
                 obj.delete
             end
-        end %close startAcquisition
+        end %close start
 
 
         function stop(obj)
             % Stop the AI and then AO tasks
-            fprintf('Stopping the task\n');
+            fprintf('Stopping the scanning AI and AO tasks\n');
             obj.hAITask.stop;    % Calls DAQmxStopTask
             obj.hAOTask.stop;
-        end %close stopAcquisition
+        end %close stop
 
 
         function generateScaWaveforms(obj)
@@ -234,7 +226,7 @@ classdef minimalScanner < handle
 
         function changeWaveformBFreqMult(obj,newVal)
             % Restarts the acquisition with a new frequency relationship
-            obj.stopAcquisition
+            obj.stop
             obj.waveform_B_freqMultiplier=newVal;
             obj.generateScaWaveforms
 
@@ -246,7 +238,7 @@ classdef minimalScanner < handle
                 obj.delete
             end
 
-            obj.startAcquisition
+            obj.start
         end %close changeWaveformBFreqMult
 
 
@@ -258,17 +250,10 @@ classdef minimalScanner < handle
             % Read data off the DAQ
             rawImData = readAnalogData(src,src.everyNSamples,'Native');
 
-            obj.lastFrame = reshape(rawImData,obj.imSize,obj.imSize); %Reshape the data vector into a square image
-            obj.lastFrame = rot90(obj.lastFrame); %So the fast axis (x) is show along the image rows
-
-            if obj.invertSigal
-                % Multiply by minus one if you're using a PMT and your amplifier doesn't invert the signal
-                obj.lastFrame = -obj.lastFrame; 
-            end
-
+            % Reshape the data vector into a square image and rotate to have the fast axis (x) along the image rows
+            % obj.invertSignal should have been set to -1 if the PMT amplifier is non-inverting.
             % Plot the image data by setting the "CData" property of the image object in the plot window
-            set(obj.hIm, 'CData',obj.lastFrame);
-
+            obj.hIm.CData = rot90( reshape(rawImData, obj.imSize, obj.imSize) ) * obj.invertSigal;
         end %close readAndDisplayLastFrame
 
 
