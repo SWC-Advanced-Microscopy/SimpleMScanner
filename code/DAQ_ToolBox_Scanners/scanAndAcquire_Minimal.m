@@ -5,7 +5,7 @@ function scanAndAcquire_Minimal(DeviceID)
 %
 % Purpose
 % This is a tutorial function. Its goal is to show the minimal possible code necessary
-% to run a 2-photon microscope. This function produces uni-direction galvo waveforms
+% to run a 2-photon microscope. This function produces uni-directional galvo waveforms
 % to scan the beam across the sample. It acquires data from one photo-detector (a PMT or
 % a photo-diode) through one analog input channel. 
 %

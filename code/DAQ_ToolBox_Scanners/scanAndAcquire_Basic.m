@@ -7,7 +7,7 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 % Purpose
 % This is a tutorial function. Its goal is to show the minimal possible code necessary
 % to get good images from a 2-photon microscope and stream the to disk. This function 
-% produces uni-direction galvo waveforms to scan the beam across the sample. It acquires data 
+% produces uni-directional galvo waveforms to scan the beam across the sample. It acquires data 
 % from one photo-detector (a PMT or a photo-diode) through one analog input channel. 
 %
 % All parameters are hard-coded within the function to keep things brief and focus on how 
@@ -91,13 +91,13 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
 
     %----------------------------------
     % Scan parameters
-    galvoAmp = 2; %Scanner amplitude (defined as peak-to-peak/2) 
-    imSize = 256; %Number pixel rows and columns
-    samplesPerPixel = 4; %Number of samples to take at each pixel. These will be averaged.
+    galvoAmp = 2; % Scanner amplitude (defined as peak-to-peak/2) 
+    imSize = 256; % Number pixel rows and columns
+    samplesPerPixel = 4; % Number of samples to take at each pixel. These will be averaged.
     sampleRate  = 512E3; 
-    fillFraction = 0.85; %1-fillFraction is considered to be the turn-around time and is excluded from the image
+    fillFraction = 0.85; % 1-fillFraction is considered to be the turn-around time and is excluded from the image
     AIrange = 2; % Digitise over +/- this range. 
-    invertSigal = false; %Set to true if using a non-inverting amp with a PMT
+    invertSigal = false; % Set to true if using a non-inverting amp with a PMT
     %----------------------------------
 
 
@@ -129,6 +129,9 @@ function scanAndAcquire_Basic(hardwareDeviceID,saveFname)
     % must obtain more data than needed for the final image. Here is how we do this:
 
     fillFractionExcess = 2-fillFraction; % The proportional increase in scanned area along X due to the fill-fraction
+    % So so it's "2-fillFraction" because what we end up doing is acquiring *more* points and trimming the back so if the 
+    % user asked for 512x512 pixels this is what they end up getting.
+
     correctedPointsPerLine = ceil(imSize*fillFractionExcess); % Actual number of points we will need to collect
 
     % We also make it possible to acquire multiple samples per pixel. So must

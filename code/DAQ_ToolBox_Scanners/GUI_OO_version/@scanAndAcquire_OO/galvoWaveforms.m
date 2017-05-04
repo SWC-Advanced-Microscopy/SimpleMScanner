@@ -28,54 +28,54 @@ function dataToPlay = galvoWaveforms(obj,verbose)
 %
 %
 % Rob Campbell - Basel 2016
-	
+    
 
-	if nargin<2
-		verbose=false;
-	end
+    if nargin<2
+        verbose=false;
+    end
 
-	%Simple check to ensure that we have all the parameters needed to build the waveforms
-	if isempty(obj.scannerAmplitude) || ...
-		isempty(obj.samplesPerPixel) || ...
-		isempty(obj.imSize) || ...
-		isempty(obj.scanPattern) || ...
-		isempty(obj.fillFraction)
-		return
-	end	
+    %Simple check to ensure that we have all the parameters needed to build the waveforms
+    if isempty(obj.scannerAmplitude) || ...
+        isempty(obj.samplesPerPixel) || ...
+        isempty(obj.imSize) || ...
+        isempty(obj.scanPattern) || ...
+        isempty(obj.fillFraction)
+        return
+    end 
 
-	% Calculate the number of samples per line. We want to produce a final image composed of
-	% imSize data points on each line. However, if the fill fraction is less than 1, we
-	% need to collect more than this then trim it back when we build the image. 
-	% The number of samples collected per line will scale with the number of samples per point
-	fillFractionExcess = 2-obj.fillFraction; %The proprotional increase in scanned area along X
-	pixelsPerLine  = ceil(obj.imSize * fillFractionExcess);
-	samplesPerLine = pixelsPerLine * obj.samplesPerPixel;
+    % Calculate the number of samples per line. We want to produce a final image composed of
+    % imSize data points on each line. However, if the fill fraction is less than 1, we
+    % need to collect more than this then trim it back when we build the image. 
+    % The number of samples collected per line will scale with the number of samples per point
+    fillFractionExcess = 2-obj.fillFraction; %The proprotional increase in scanned area along X
+    pixelsPerLine  = ceil(obj.imSize * fillFractionExcess);
+    samplesPerLine = pixelsPerLine * obj.samplesPerPixel;
 
-	if verbose
-		if fillFraction<1
-			fprintf('Based on a fill-fraction of %0.1f, the number of pixels per line goes up from %d to %d\n',...
-				obj.fillFraction, obj.imSize, pixelsPerLine)
-		else
-			fprintf('There are %d pixels per line\n', obj.imSize)
-		end
-	end
+    if verbose
+        if fillFraction<1
+            fprintf('Based on a fill-fraction of %0.1f, the number of pixels per line goes up from %d to %d\n',...
+                obj.fillFraction, obj.imSize, pixelsPerLine)
+        else
+            fprintf('There are %d pixels per line\n', obj.imSize)
+        end
+    end
 
-	%Produce the Y waveform and retain a square image
-	yScanAmp = obj.scannerAmplitude*obj.fillFraction; %zoom in with Y to compensate for the region lost in X due to the fill fraction changing
-	yWaveform = linspace(yScanAmp, -yScanAmp, samplesPerLine*obj.imSize);
+    %Produce the Y waveform and retain a square image
+    yScanAmp = obj.scannerAmplitude*obj.fillFraction; %zoom in with Y to compensate for the region lost in X due to the fill fraction changing
+    yWaveform = linspace(yScanAmp, -yScanAmp, samplesPerLine*obj.imSize);
 
 
-	%Produce the X waveform
-	xWaveform = linspace(-obj.scannerAmplitude, obj.scannerAmplitude, samplesPerLine);
+    %Produce the X waveform
+    xWaveform = linspace(-obj.scannerAmplitude, obj.scannerAmplitude, samplesPerLine);
 
-	if strcmpi(obj.scanPattern,'bidi')
-		if verbose
-			fprintf('Building bidirectional scan waveform\n')
-		end
-		xWaveform = [xWaveform,fliplr(xWaveform)];
-	end
+    if strcmpi(obj.scanPattern,'bidi')
+        if verbose
+            fprintf('Building bidirectional scan waveform\n')
+        end
+        xWaveform = [xWaveform,fliplr(xWaveform)];
+    end
 
-	xWaveform = repmat(xWaveform,1,ceil(length(yWaveform)/length(xWaveform)));
+    xWaveform = repmat(xWaveform,1,ceil(length(yWaveform)/length(xWaveform)));
     
     if length(xWaveform) < length(yWaveform)
         error('xWaveform is shorter than yWaveform. The x is %d long and the y %d long',...
@@ -83,11 +83,11 @@ function dataToPlay = galvoWaveforms(obj,verbose)
     end
     xWaveform = xWaveform(1:length(yWaveform));
     
-	if verbose
-		fprintf('Final waveforms have a length of %d\n',length(xWaveform))
-	end
+    if verbose
+        fprintf('Final waveforms have a length of %d\n',length(xWaveform))
+    end
 
-	%Assemble the two waveforms into an N-by-2 array that can be sent to the NI board
-	dataToPlay = [xWaveform(:),yWaveform(:)];
+    %Assemble the two waveforms into an N-by-2 array that can be sent to the NI board
+    dataToPlay = [xWaveform(:),yWaveform(:)];
 
 end

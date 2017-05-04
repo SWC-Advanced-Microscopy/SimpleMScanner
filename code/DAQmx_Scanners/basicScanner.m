@@ -1,22 +1,24 @@
-classdef minimalScanner < handle
+classdef basicScanner < handle
     % Minimal code needed to acquire data from one channel of a 2-photon microscope
     %
-    % minimalScanner
+    % basicScanner
     %
     %
     % Description:
-    % This is a tutorial class shows the minimal possible code necessary to acquire data
-    % with a scanning microscope. This class produces uni-directional galvo waveforms
-    % to scan the beam across the sample. It acquires data from one photo-detector (a PMT or
-    % a photo-diode) through a single analog input channel. 
+    % This is a tutorial class shows the minimal possible code necessary to get good images 
+    % from a 2-photon scanning microscope, and stream the to disk. This class produces 
+    % uni-directional galvo waveforms to scan the beam across the sample. It acquires data 
+    % from one photo-detector (a PMT or a photo-diode) through a single analog input channel. 
+    % This class is a more advanced version of minimalScanner.
     %
     % All scanning parameters are hard-coded into the class properties to keep things brief 
     % and focus on how the acquisition is being done. No superfluous things like fast 
     % beam-blanking, saving, or even artefact correction and error checks are performed. 
-    % The raw images are just streamed to a figure window. This example is based on 
-    % vidrio.mixed.AOandAI_OO.m from the MatlabDAQmx repository 
-    % (https://github.com/tenss/MatlabDAQmx). If you are not familiar with object-oriented 
-    % programming, you should look there for a primer.
+    % The raw images are just streamed to a figure window. Two important parameters are added
+    % compared to minimalScanner:
+    % 1. The "fillFraction", which is used to remove the turn-around artefact
+    % 2. "samplesPerPixel", which is used to average multiple samples per pixel and so improve
+    %    image quality. samplesPerPixel should be changed in association with "sampleRate". 
     %
     %
     % Instructions
@@ -30,6 +32,10 @@ classdef minimalScanner < handle
     % hardwareDeviceID - [Optional, default is 'Dev1'] A string defining the device ID of your 
     %                    NI acquisition board. Use the command "daq.getDevices" to find the ID 
     %                    of your board. By default this is 'Dev1'
+    % saveFname - An optional string defining the relative or absolute path of a file to which data 
+    %             should be written. Data will be written as a TIFF stack. If not supplied, no data 
+    %             are saved to disk. 
+    %
     %
     %
     % Examples
@@ -44,17 +50,17 @@ classdef minimalScanner < handle
     %     Dev1
     %     scan
     %
-    % >> S=minimalScanner('Dev2') % By default it's 'Dev1'
+    % >> S=basicScanner('Dev2') % By default it's 'Dev1'
     % >> S.stop % stops the scanning
     % >> S.stop % re-starts the scanning
     %
-    % NOTE:
-    % To run with different scanning parameters (e.g. different image sizes or zooms) you need
-    % stop and close the class, edit the properties, then re-start the class.
     %
     %
     % Requirements
     % DAQmx and the Vidrio dabs.ni.daqmx wrapper
+    %
+    % See Also:
+    % minimalScanner
 
 
 
@@ -67,11 +73,13 @@ classdef minimalScanner < handle
         imSize = 256        % Number pixel rows and columns
         invertSigal = 1     % Set to -1 if using a non-inverting amp with a PMT
         waveforms           % The scanner waveforms will be stored here
+        fillFraction = 0.85 % 1-fillFraction is considered to be the turn-around time and is excluded from the image
+        saveFname=''
 
         % The following properties are more directly related to setting up the DAQ
         DAQDevice = 'Dev1'
 
-        %Properties for the analog input end of things
+        % Properties for the analog input end of things
         hAITask %The AI task will be kept here
 
         AIChan = 0 
@@ -79,12 +87,12 @@ classdef minimalScanner < handle
         AIrange = 2  % Digitise over +/- this range. 
 
         % Properties for the analog output end of things
-        hAOTask %The AO task will be kept here
+        hAOTask % The AO task will be kept here
         AOChans = 0:1
 
         % Shared properties
         sampleRate = 128E3  % The sample rate at which the board runs (Hz)
-    end %close properties block
+    end % close properties block
 
 
     properties (Hidden,SetAccess=private)
@@ -93,6 +101,10 @@ classdef minimalScanner < handle
         hFig    % The handle to the figure which shows the data is stored here
         imAxes  % Handle for the image axes
         hIm     % Handle produced by imagesc
+
+
+        correctedPointsPerLine % Actual number of points we will need to collect, this is a fill-fraction-related parameter
+        lastFrame % The last acquired frame is stored here
     end
 
 
@@ -100,14 +112,18 @@ classdef minimalScanner < handle
 
     methods
 
-        function obj=minimalScanner(deviceID)
+        function obj=basicScanner(deviceID,saveFname)
             % This method is the "constructor", it runs when the class is instantiated.
 
             if nargin>0
                 obj.DAQDevice = deviceID;
             end
 
-            fprintf('Please see "help minimalScanner for usage information\n')
+            if nargin>1
+                obj.saveFname=saveFname;
+            end
+
+            fprintf('Please see "help basicScanner for usage information\n')
 
             % Build the figure window and have it shut off the acquisition when closed.
             obj.hFig = clf;
@@ -133,7 +149,7 @@ classdef minimalScanner < handle
 
         function delete(obj)
             % This method is the "destructor". It runs when an instance of the class is deleted.
-            fprintf('Tidying up minimalScanner\n')
+            fprintf('Tidying up basicScanner\n')
             obj.hFig.delete %Closes the plot window
             obj.stop % Call the method that stops the DAQmx tasks
 
@@ -212,14 +228,30 @@ classdef minimalScanner < handle
 
 
         function generateScanWaveforms(obj)
-            % This method builds simple ("unshaped") galvo waveforms and stores them in the obj.waveforms property.
-            % "shaped" waveforms would be those that have some sort of smoothed deceleration at the mirror 
-            % turn-arounds to help increase frame rate and improve scanning accuracy. 
+            % Calculate the number of samples per line taking into account the fill-fraction. 
+            % The fill-fraction is the proportion of each scan line that we keep and use for 
+            % image formation. scanAndAcquire_Minimal keeps the whole line. Images from that
+            % function show a "turn-around artefact". This occurs when data acquired during the 
+            % x-mirror fly-back are used for image formation. The purpose of the fill-fraction
+            % setting is to discard these data points and leave us with a clean image. So, if
+            % the fill-fraction is 0.9, we discard 10% of the X data and keep the rest. In order
+            % to get the number of pixels asked for by the user regardless of the fill fraction we
+            % must obtain more data than needed for the final image. Here is how we do this:
 
-            yWaveform = linspace(obj.galvoAmp, -obj.galvoAmp, obj.imSize^2); 
+            fillFractionExcess = 2-obj.fillFraction; % The proportional increase in scanned area along X due to the fill-fraction
+            % So so it's "2-fillFraction" because what we end up doing is acquiring *more* points and trimming the back so if the 
+            % user asked for 512x512 pixels this is what they end up getting.
+
+            obj.correctedPointsPerLine = ceil(obj.imSize*fillFractionExcess); % Actual number of points we will need to collect
+
+            % We also make it possible to acquire multiple samples per pixel. So must
+            % multiply correctedPointsPerLine by the number of samples per pixel.
+            samplesPerLine = obj.correctedPointsPerLine*obj.samplesPerPixel;
+
+            yWaveform = linspace(obj.galvoAmp, -obj.galvoAmp, samplesPerLine*obj.imSize^2); 
 
             % The X waveform goes from +galvoAmp to -galvoAmp over the course of one line.
-            xWaveform = linspace(-obj.galvoAmp, obj.galvoAmp, obj.imSize); % One line of X
+            xWaveform = linspace(-obj.galvoAmp, obj.galvoAmp, samplesPerLine); % One line of X
 
             % Repeat the X waveform "imSize" times in order to build a square image
             xWaveform = repmat(xWaveform, 1, length(yWaveform)/length(xWaveform)); 
@@ -230,6 +262,7 @@ classdef minimalScanner < handle
             %Report frame rate to screen
             fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n', ...
              obj.imSize, obj.imSize, obj.sampleRate/length(obj.waveforms);
+
 
         end %close generateScanWaveforms
 
@@ -242,11 +275,31 @@ classdef minimalScanner < handle
             % Read data off the DAQ
             rawImData = readAnalogData(src,src.everyNSamples,'Scaled');
 
-            % Reshape the data vector into a square image and rotate to have the fast axis (x) along the image rows
-            % obj.invertSignal should have been set to -1 if the PMT amplifier is non-inverting.
-            % Plot the image data by setting the "CData" property of the image object in the plot window
-            obj.hIm.CData = rot90( reshape(rawImData, obj.imSize, obj.imSize) ) * obj.invertSigal;
+            %First we average together all points associated with the same pixel
+            obj.lastFrame = mean(reshape(rawImData, obj.samplesPerPixel,[]),1)'; 
+            obj.lastFrame = reshape(obj.lastFrame, obj.correctedPointsPerLine, obj.imSize);
+
+
+            % Now keep only "imSize" pixels from each row. This trims off the excess
+            % That comes from fill-fractions less than 1. If the fill-fraction is chosen
+            % correctly, the X mirror turn-around artefact is now gone. 
+            obj.lastFrame = obj.lastFrame(end-obj.imSize:end,:); 
+
+            obj.hIm.CData = rot90(obj.lastFrame) * obj.invertSigal;
+
+            obj.saveLastFrame
         end %close readAndDisplayLastFrame
+
+
+        function saveLastFrame(obj)
+            if ~isempty(obj.saveFname) %Optionally write data to disk
+                im = (im/AIrange) * 2^16 ; %ensure values span 16 bit range
+                im = uint16(im); %Convert to unsigned 16 bit integers. Negative numbers will be gone.
+                imwrite(im, obj.saveFname, 'tiff', ...
+                        'Compression', 'None', ... %Don't compress because this slows IO
+                        'WriteMode', 'Append') 
+            end
+        end % close saveLastFrame
 
 
         function windowCloseFcn(obj,~,~)
@@ -259,7 +312,7 @@ classdef minimalScanner < handle
 
     end %close methods block
 
-end %close the vidrio.mixed.minimalScanner class definition 
+end %close the vidrio.mixed.basicScanner class definition 
 
 
 
