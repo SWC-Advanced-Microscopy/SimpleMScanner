@@ -45,8 +45,8 @@ classdef minimalScanner < handle
     %     scan
     %
     % >> S=minimalScanner('Dev2') % By default it's 'Dev1'
-    % >> S.stop % stops the scanning
-    % >> S.stop % re-starts the scanning
+    % >> S.stop  % stops the scanning
+    % >> S.start % re-starts the scanning
     %
     % NOTE:
     % To run with different scanning parameters (e.g. different image sizes or zooms) you need
@@ -65,11 +65,11 @@ classdef minimalScanner < handle
         % These properties are specific to scanning and image construction
         galvoAmp = 2        % Scanner amplitude (defined as peak-to-peak/2) Increasing this increases the area scanned (CAREFUL!)
         imSize = 256        % Number pixel rows and columns
-        invertSigal = 1     % Set to -1 if using a non-inverting amp with a PMT
+        invertSignal = 1     % Set to -1 if using a non-inverting amp with a PMT
         waveforms           % The scanner waveforms will be stored here
 
         % The following properties are more directly related to setting up the DAQ
-        DAQDevice = 'Dev1'
+
 
         %Properties for the analog input end of things
         hAITask %The AI task will be kept here
@@ -82,7 +82,8 @@ classdef minimalScanner < handle
         hAOTask %The AO task will be kept here
         AOChans = 0:1
 
-        % Shared properties
+        % These properties are common to both tasks
+        DAQDevice = 'Dev1'
         sampleRate = 128E3  % The sample rate at which the board runs (Hz)
     end %close properties block
 
@@ -174,7 +175,8 @@ classdef minimalScanner < handle
                 obj.hAOTask.cfgSampClkTiming(obj.sampleRate, 'DAQmx_Val_ContSamps', size(obj.waveforms,1));
 
                 if obj.hAOTask.sampClkRate ~= obj.hAITask.sampClkRate
-                    fprintf('WARNING: AI task sample clock rate does not match AO task sample clock rate. Scan lines will precess.\n')
+                    fprintf(['WARNING: AI task sample clock rate does not match AO task sample clock rate. Scan lines will precess.\n', ...
+                        'This issue is corrected in polishedScanner, which uses a shared sample clock between AO and AI\n'])
                 end
 
                 % Allow sample regeneration (buffer is circular)
@@ -249,7 +251,7 @@ classdef minimalScanner < handle
             % Reshape the data vector into a square image and rotate to have the fast axis (x) along the image rows
             % obj.invertSignal should have been set to -1 if the PMT amplifier is non-inverting.
             % Plot the image data by setting the "CData" property of the image object in the plot window
-            obj.hIm.CData = rot90( reshape(rawImData, obj.imSize, obj.imSize) ) * obj.invertSigal;
+            obj.hIm.CData = rot90( reshape(rawImData, obj.imSize, obj.imSize) ) * obj.invertSignal;
         end %close readAndDisplayLastFrame
 
 

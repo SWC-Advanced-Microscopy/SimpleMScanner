@@ -1,7 +1,7 @@
-classdef basicScanner < handle
+classdef polishedScanner < handle
     % Minimal code needed to acquire data from one channel of a 2-photon microscope
     %
-    % basicScanner
+    % polishedScanner
     %
     %
     % Description:
@@ -9,16 +9,12 @@ classdef basicScanner < handle
     % from a 2-photon scanning microscope, and stream the to disk. This class produces 
     % uni-directional galvo waveforms to scan the beam across the sample. It acquires data 
     % from one photo-detector (a PMT or a photo-diode) through a single analog input channel. 
-    % This class is a more advanced version of minimalScanner.
+    % This class is a more advanced version of basicScanner.
     %
     % All scanning parameters are hard-coded into the class properties to keep things brief 
-    % and focus on how the acquisition is being done. Three important parameters are added
-    % compared to minimalScanner:
-    % 1. The "fillFraction", which is used to remove the turn-around artefact
-    % 2. "samplesPerPixel", which is used to average multiple samples per pixel and so improve
-    %    image quality. samplesPerPixel should be changed in association with "sampleRate". 
-    % 3. There is also the option to save data data (see below).
-    % In addition, the current frame number is displayed over the image. 
+    % and focus on how the acquisition is being done. XXX important parameters are added
+    % compared to basicScanner:
+    %   TODO
     %
     %
     % Instructions
@@ -50,19 +46,33 @@ classdef basicScanner < handle
     %     Dev1
     %     scan
     %
-    % >> S=basicScanner('Dev2') % By default it's 'Dev1'
-    % >> S.stop  % stops the scanning
-    % >> S.start % re-starts the scanning
-    %
+    % >> S=polishedScanner('Dev2') % By default it's 'Dev1'
+    % >> S.stop   % Stops the scanning
+    % >> S.start  % Re-starts the scanning
+    % >> S.sampleRate  % Query the sample rate 
+    %    ans =
+    %       1.2821e+05
+    % >> S.FPS  % Query the number of frames per second
+    %    ans =
+    %       3.3838
+    % % Drop down to a slower sample rate and query the FPS again:
+    % >> S.sampleRate=32E3;
+    % >> S.FPS
+    %   ans =
+    %      0.8446
     %
     %
     % Requirements
     % DAQmx and the Vidrio dabs.ni.daqmx wrapper
     %
     % See Also:
-    % minimalScanner
+    % basicScanner, minimalScanner
 
 
+
+    % TODO: change imSize, fillFraction, samplesPerPixel, and galvo amplitude on the fly
+    % TODO: add a start/stop button
+    % TODO: add a histogram that can be disabled at the command-line
 
     % Define properties that we will use for the acquisition. The properties are "protected" to avoid
     % the user changing them at the command line. Doing so would cause the acquisition to exhibit errors
@@ -90,10 +100,6 @@ classdef basicScanner < handle
         % Properties for the analog output end of things
         hAOTask % The AO task will be kept here
         AOChans = 0:1
-
-        % These properties are common to both tasks
-        DAQDevice = 'Dev1'
-        sampleRate = 128E3  % The sample rate at which the board runs (Hz)
     end % close properties block
 
 
@@ -110,12 +116,26 @@ classdef basicScanner < handle
         currentFrame=1;
     end
 
+    properties (Dependent)
+        % Dependent properties appear at the command line like regular properties but they don't store data. 
+        % Instead, they depend on other properties or methods:
+        % https://www.mathworks.com/matlabcentral/answers/128905-how-to-efficiently-use-dependent-properties-if-dependence-is-computational-costly
+        % https://www.mathworks.com/help/matlab/matlab_oop/access-methods-for-dependent-properties.html        
+        sampleRate % The user can change the sample rate here
+        FPS % Returns the number of frames per second
+    end
+
+    properties (Hidden)
+        % These properties are related to the dependent properties
+        desiredSampleRate = 128E3  % The target sample rate for the board to run at (Hz)
+    end
+
 
 
 
     methods
 
-        function obj=basicScanner(deviceID,saveFname)
+        function obj=polishedScanner(deviceID,saveFname)
             % This method is the "constructor", it runs when the class is instantiated.
 
             if nargin>0
@@ -126,7 +146,7 @@ classdef basicScanner < handle
                 obj.saveFname=saveFname;
             end
 
-            fprintf('Please see "help basicScanner for usage information\n')
+            fprintf('Please see "help polishedScanner for usage information\n')
 
             % Build the figure window and have it shut off the acquisition when closed.
             obj.hFig = clf;
@@ -153,7 +173,7 @@ classdef basicScanner < handle
 
         function delete(obj)
             % This method is the "destructor". It runs when an instance of the class is deleted.
-            fprintf('Tidying up basicScanner\n')
+            fprintf('Tidying up polishedScanner\n')
             obj.hFig.delete %Closes the plot window
             obj.stop % Call the method that stops the DAQmx tasks
 
@@ -183,7 +203,7 @@ classdef basicScanner < handle
                 % Configure the sampling rate and the number of samples so that we are reading back
                 % data at the end of each frame 
                 obj.generateScanWaveforms %This will populate the waveforms property
-                obj.hAITask.cfgSampClkTiming(obj.sampleRate,'DAQmx_Val_ContSamps', size(obj.waveforms,1) * 4);
+                obj.hAITask.cfgSampClkTiming(obj.desiredSampleRate,'DAQmx_Val_ContSamps', size(obj.waveforms,1) * 4, ['/',obj.DAQDevice,'/ao/SampleClock']);
 
                 % Call an anonymous function function to read from the AI buffer and plot the images once per frame
                 obj.hAITask.registerEveryNSamplesEvent(@obj.readAndDisplayLastFrame, size(obj.waveforms,1), false, 'Scaled');
@@ -191,13 +211,7 @@ classdef basicScanner < handle
 
                 % * Set up the AO task
                 % Set the size of the output buffer
-                obj.hAOTask.cfgSampClkTiming(obj.sampleRate, 'DAQmx_Val_ContSamps', size(obj.waveforms,1));
-
-
-                if obj.hAOTask.sampClkRate ~= obj.hAITask.sampClkRate
-                    fprintf(['WARNING: AI task sample clock rate does not match AO task sample clock rate. Scan lines will precess.\n', ...
-                        'This issue is corrected in polishedScanner, which uses a shared sample clock between AO and AI\n'])
-                end
+                obj.hAOTask.cfgSampClkTiming(obj.desiredSampleRate, 'DAQmx_Val_ContSamps', size(obj.waveforms,1));
 
                 % Allow sample regeneration (buffer is circular)
                 obj.hAOTask.set('writeRegenMode', 'DAQmx_Val_AllowRegen');
@@ -231,7 +245,6 @@ classdef basicScanner < handle
 
         function stop(obj)
             % Stop the AI and then AO tasks
-            fprintf('Stopping the scanning AI and AO tasks\n');
             obj.hAITask.stop;    % Calls DAQmxStopTask
             obj.hAOTask.stop;
         end %close stop
@@ -271,7 +284,7 @@ classdef basicScanner < handle
 
             %Report frame rate to screen
             fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n', ...
-             obj.imSize, obj.imSize, obj.sampleRate/length(obj.waveforms));
+             obj.imSize, obj.imSize, obj.FPS);
         end %close generateScanWaveforms
 
 
@@ -322,9 +335,35 @@ classdef basicScanner < handle
             obj.delete % simply call the destructor
         end %close windowCloseFcn
 
+
+
     end %close methods block
 
+
+    % Property get and set methods follow in this block. 
+    % We're using a seperate properties block for neatness, it's not necessary
+    methods
+        function actualSampleRate=get.sampleRate(obj)
+            % The actual sample rate likely won't be the desired sample rate
+            actualSampleRate = obj.hAOTask.sampClkRate;
+        end
+        function set.sampleRate(obj, newSampleRate)
+            obj.stop
+            obj.desiredSampleRate = newSampleRate;
+            obj.hAOTask.cfgSampClkTiming(obj.desiredSampleRate, 'DAQmx_Val_ContSamps', size(obj.waveforms,1));
+            %report new sample rate to screen
+            obj.start
+        end
+
+        function fps = get.FPS(obj)
+            fps=obj.sampleRate/length(obj.waveforms);
+        end
+
+    end %close getters and setters methods block 
+
 end %close the vidrio.mixed.basicScanner class definition 
+
+
 
 
 
