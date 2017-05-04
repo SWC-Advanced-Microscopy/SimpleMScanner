@@ -5,20 +5,21 @@ classdef minimalScanner < handle
     %
     %
     % Description:
-    % This is a tutorial class. Its goal is to show the minimal possible code necessary
-    % to run a 2-photon microscope. This class produces uni-direction galvo waveforms
+    % This is a tutorial class shows the minimal possible code necessary to acquire data
+    % with a scanning microscope. This class produces uni-direction galvo waveforms
     % to scan the beam across the sample. It acquires data from one photo-detector (a PMT or
-    % a photo-diode) through one analog input channel. 
+    % a photo-diode) through a single analog input channel. 
     %
     % All scanning parameters are hard-coded into the class properties to keep things brief 
     % and focus on how the acquisition is being done. No superfluous things like fast 
-    % beam-blanking, saving, or even artefact correction are performed. The raw images are 
-    % just streamed to a figure window. This example is based on vidrio.mixed.AOandAI_OO.m
-    % from the MatlabDAQmx repository (https://github.com/tenss/MatlabDAQmx). If you are not
-    % familiar with object-oriented programming, you should look there for a primer.
+    % beam-blanking, saving, or even artefact correction and error checks are performed. 
+    % The raw images are just streamed to a figure window. This example is based on 
+    % vidrio.mixed.AOandAI_OO.m from the MatlabDAQmx repository 
+    % (https://github.com/tenss/MatlabDAQmx). If you are not familiar with object-oriented 
+    % programming, you should look there for a primer.
     %
     %
-    % Instructions (TODO)
+    % Instructions
     % Start the class with the device ID of your NI acquisition board as an input argument. 
     % Quit by closing the window showing the scanned image stream. Doing this will gracefully
     % stop the acquisition. 
@@ -26,11 +27,12 @@ classdef minimalScanner < handle
     % The Y mirror should be on AO-1
     %
     % Inputs
-    % hardwareDeviceID - a string defining the device ID of your NI acquisition board. Use the command
-    %                    "daq.getDevices" to find the ID of your board. By default this is 'Dev1'
+    % hardwareDeviceID - [Optional, default is 'Dev1'] A string defining the device ID of your 
+    %                    NI acquisition board. Use the command "daq.getDevices" to find the ID 
+    %                    of your board. By default this is 'Dev1'
     %
     %
-    % Example
+    % Examples
     % The following example shows how to list the available DAQ devices and start
     % scanAndAcquire_Minimal using the ID for the NI PCI-6115 card with the default. 
     % scanning options. 
@@ -43,26 +45,30 @@ classdef minimalScanner < handle
     %     scan
     %
     % >> S=minimalScanner('Dev2') % By default it's 'Dev1'
-    % >> S.startScan
+    % >> S.stop % stops the scanning
+    % >> S.stop % re-starts the scanning
+    %
+    % NOTE:
+    % To run with different scanning parameters (e.g. different image sizes or zooms) you need
+    % stop and close the class, edit the properties, then re-start the class.
+    %
     %
     % Requirements
     % DAQmx and the Vidrio dabs.ni.daqmx wrapper
-    %
-    %
 
 
 
-    properties
-        % This block contains properties specific to scanning and also image construction
+    % Define properties that we will use for the acquisition. The properties are "protected" to avoid
+    % the user changing them at the command line. Doing so would cause the acquisition to exhibit errors
+    % because there is no mechanism for handling changes to these parameters on the fly.
+    properties (SetAccess=private)
+        % These properties are specific to scanning and image construction
         galvoAmp = 2        % Scanner amplitude (defined as peak-to-peak/2) Increasing this increases the area scanned (CAREFUL!)
         imSize = 256        % Number pixel rows and columns
         invertSigal = 1     % Set to -1 if using a non-inverting amp with a PMT
         waveforms           % The scanner waveforms will be stored here
-    end %close properties block
 
-
-    % Define properties that we will use for the acquisition  (seperate block for neatness)
-    properties
+        % The following properties are more directly related to setting up the DAQ
         DAQDevice = 'Dev1'
 
         %Properties for the analog input end of things
@@ -78,15 +84,19 @@ classdef minimalScanner < handle
 
         % Shared properties
         sampleRate = 128E3  % The sample rate at which the board runs (Hz)
-
     end %close properties block
 
-    properties (Hidden)
+
+    properties (Hidden,SetAccess=private)
         % These properties hold information relevant to the plot window
+        % They are hidden as well as protected for neatness.
         hFig    % The handle to the figure which shows the data is stored here
         imAxes  % Handle for the image axes
         hIm     % Handle produced by imagesc
     end
+
+
+
 
     methods
 
@@ -100,13 +110,12 @@ classdef minimalScanner < handle
             fprintf('Please see "help minimalScanner for usage information\n')
 
             % Build the figure window and have it shut off the acquisition when closed.
-            % See: basicConcepts/windowCloseFunction.m
             obj.hFig = clf;
             set(obj.hFig, 'Name', 'Close figure to stop acquisition', 'CloseRequestFcn', @obj.windowCloseFcn)
 
             %Make an empty axis and fill with a blank image
             obj.imAxes = axes('Parent', obj.hFig, 'Position', [0.05 0.05 0.9 0.9]);
-            obj.hIm = imagesc(obj.imAxes,zeros(obj.imSize)) 
+            obj.hIm = imagesc(obj.imAxes,zeros(obj.imSize));
             set(obj.imAxes, 'XTick', [], 'YTIck', [], 'CLim', [0,obj.AIrange], 'Box', 'on')
             axis square
             colormap gray
@@ -116,17 +125,14 @@ classdef minimalScanner < handle
             % call and by the destructor
             obj.connectToDAQandSetUpChannels
 
-
             % Start the acquisition
-            % obj.start
-            % fprintf('Close figure to quit acquisition\n')
+            obj.start
+            fprintf('Close figure to quit acquisition\n')
         end % close constructor
 
 
         function delete(obj)
             % This method is the "destructor". It runs when an instance of the class is deleted.
-            % The destructor is not required for your class to be valid.
-
             fprintf('Tidying up minimalScanner\n')
             obj.hFig.delete %Closes the plot window
             obj.stop % Call the method that stops the DAQmx tasks
@@ -156,10 +162,11 @@ classdef minimalScanner < handle
 
                 % Configure the sampling rate and the number of samples so that we are reading back
                 % data at the end of each frame 
+                obj.generateScanWaveforms %This will populate the waveforms property
                 obj.hAITask.cfgSampClkTiming(obj.sampleRate,'DAQmx_Val_ContSamps', size(obj.waveforms,1) * 6);
 
                 % Call an anonymous function function to read from the AI buffer and plot the images once per frame
-                obj.hAITask.registerEveryNSamplesEvent(@obj.readAndDisplayLastFrame, size(obj.waveforms,1), false, 'Native');
+                obj.hAITask.registerEveryNSamplesEvent(@obj.readAndDisplayLastFrame, size(obj.waveforms,1), false, 'Scaled');
 
 
                 % * Set up the AO task
@@ -170,13 +177,12 @@ classdef minimalScanner < handle
                 obj.hAOTask.set('writeRegenMode', 'DAQmx_Val_AllowRegen');
 
                 % Write the waveform to the buffer with a 5 second timeout in case it fails
-                obj.generateScaWaveforms %This will populate the waveforms property
                 obj.hAOTask.writeAnalogData(obj.waveforms, 5)
 
                 % Configure the AO task to start as soon as the AI task starts
-                obj.hAOTask.cfgDigEdgeStartTrig(['/',obj.AIDevice,'/ai/StartTrigger'], 'DAQmx_Val_Rising');
+                obj.hAOTask.cfgDigEdgeStartTrig(['/',obj.DAQDevice,'/ai/StartTrigger'], 'DAQmx_Val_Rising');
             catch ME
-                    daqDemosHelpers.errorDisplay(ME)
+                    errorDisplay(ME)
                     %Tidy up if we fail
                     obj.delete
             end
@@ -190,7 +196,7 @@ classdef minimalScanner < handle
                 obj.hAOTask.start();
                 obj.hAITask.start();
             catch ME
-                daqDemosHelpers.errorDisplay(ME)
+                errorDisplay(ME)
                 %Tidy up if we fail
                 obj.delete
             end
@@ -205,50 +211,31 @@ classdef minimalScanner < handle
         end %close stop
 
 
-        function generateScaWaveforms(obj)
+        function generateScanWaveforms(obj)
             % This method builds simple ("unshaped") galvo waveforms and stores them in the obj.waveforms property.
             % "shaped" waveforms would be those that have some sort of smoothed deceleration at the mirror 
             % turn-arounds to help increase frame rate and improve scanning accuracy. 
 
-            yWaveform = linspace(obj.galvoAmp, -obj.galvoAmp, imSize^2); 
+            yWaveform = linspace(obj.galvoAmp, -obj.galvoAmp, obj.imSize^2); 
 
             % The X waveform goes from +galvoAmp to -galvoAmp over the course of one line.
-            % The mirror is moving continuously. 
-            xWaveform = linspace(-obj.galvoAmp, obj.galvoAmp, imSize); % One line of X
+            xWaveform = linspace(-obj.galvoAmp, obj.galvoAmp, obj.imSize); % One line of X
 
             % Repeat the X waveform "imSize" times in order to build a square image
             xWaveform = repmat(xWaveform, 1, length(yWaveform)/length(xWaveform)); 
 
             % Assemble the two waveforms into an N-by-2 array
             obj.waveforms = [xWaveform(:), yWaveform(:)];
-        end %close generateScaWaveforms
-
-
-        function changeWaveformBFreqMult(obj,newVal)
-            % Restarts the acquisition with a new frequency relationship
-            obj.stop
-            obj.waveform_B_freqMultiplier=newVal;
-            obj.generateScaWaveforms
-
-            try
-                obj.hAOTask.writeAnalogData(obj.waveforms, 5)
-            catch ME 
-                daqDemosHelpers.errorDisplay(ME)
-                %Tidy up if we fail
-                obj.delete
-            end
-
-            obj.start
-        end %close changeWaveformBFreqMult
+        end %close generateScanWaveforms
 
 
         function readAndDisplayLastFrame(obj,src,evnt)
             % This callback method is run each time one frame's worth of data have been acquired.
-            % This happens because the of the listener set up, above (TODO: elaborate). The method
-            % reads the data off the board and plots to screen. 
+            % This happens because the of the listener set up in the method connectToDAQandSetUpChannels
+            % on the "obj.hAITask.registerEveryNSamplesEvent" line.
 
             % Read data off the DAQ
-            rawImData = readAnalogData(src,src.everyNSamples,'Native');
+            rawImData = readAnalogData(src,src.everyNSamples,'Scaled');
 
             % Reshape the data vector into a square image and rotate to have the fast axis (x) along the image rows
             % obj.invertSignal should have been set to -1 if the PMT amplifier is non-inverting.
@@ -268,3 +255,14 @@ classdef minimalScanner < handle
     end %close methods block
 
 end %close the vidrio.mixed.minimalScanner class definition 
+
+
+
+% Private functions not part of the class definition
+function errorDisplay(ME)
+    fprintf('ERROR: %s\n',ME.message)
+    for ii=1:length(ME.stack)
+        fprintf(' on line %d of %s\n', ME.stack(ii).line,  ME.stack(ii).name)
+    end
+    fprintf('\n')
+end
