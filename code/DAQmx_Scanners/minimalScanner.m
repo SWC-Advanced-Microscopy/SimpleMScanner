@@ -27,7 +27,7 @@ classdef minimalScanner < handle
     %
     % Inputs
     % hardwareDeviceID - a string defining the device ID of your NI acquisition board. Use the command
-    %                    "daq.getDevices" to find the ID of your board.
+    %                    "daq.getDevices" to find the ID of your board. By default this is 'Dev1'
     %
     %
     % Example
@@ -42,7 +42,7 @@ classdef minimalScanner < handle
     %     Dev1
     %     scan
     %
-    % >> S=minimalScanner('Dev1')
+    % >> S=minimalScanner('Dev2') % By default it's 'Dev1'
     % >> S.startScan
     %
     % Requirements
@@ -52,7 +52,7 @@ classdef minimalScanner < handle
 
 
 
-    properties 
+    properties
         % This block contains properties specific to scanning and also image construction
         galvoAmp = 2;        % Scanner amplitude (defined as peak-to-peak/2) Increasing this increases the area scanned (CAREFUL!)
         imSize = 256;        % Number pixel rows and columns
@@ -80,10 +80,6 @@ classdef minimalScanner < handle
         % Shared properties
         sampleRate = 128E3; % The sample rate at which the board runs (Hz)
 
-
-        updatePeriod = 0.15 % How often to read 
-        acqPeriod = 5
-
     end %close properties block
 
     properties (Hidden)
@@ -95,8 +91,12 @@ classdef minimalScanner < handle
 
     methods
 
-        function obj=minimalScanner
+        function obj=minimalScanner(deviceID)
             % This method is the "constructor", it runs when the class is instantiated.
+
+            if nargin>0
+                obj.DAQDevice = deviceID;
+            end
 
             fprintf('Please see "help minimalScanner for usage information\n')
 
@@ -135,7 +135,7 @@ classdef minimalScanner < handle
             % This method is the "destructor". It runs when an instance of the class is deleted.
             % The destructor is not required for your class to be valid.
 
-            fprintf('Tidying up vidrio.mixed.minimalScanner\n')
+            fprintf('Tidying up minimalScanner\n')
             obj.hFig.delete %Closes the plot window
             obj.stopAcquisition % Call the method that stops the DAQmx tasks
 
@@ -163,14 +163,13 @@ classdef minimalScanner < handle
                 % * Set up the AI task
 
                 % Configure the sampling rate and the number of samples so that we are reading back
-                % with the period defined by updatePeriod (see also the method obj.acqNumSamples)
-                obj.hAITask.cfgSampClkTiming(obj.sampleRate,'DAQmx_Val_ContSamps', round(obj.sampleRate*obj.updatePeriod)*10);
+                % data at the end of each frame 
+                obj.hAITask.cfgSampClkTiming(obj.sampleRate,'DAQmx_Val_ContSamps', size(obj.waveforms,1) * 6);
 
-                % Call an anonymous function function to top up the buffer once less than 
-                % have been played out. Also see: basicConcepts/anonymousFunctionExample.
-                obj.hAITask.registerEveryNSamplesEvent(@obj.readAndDisplayLastFrame, round(obj.sampleRate*obj.updatePeriod), false, 'Native');
-               
-               
+                % Call an anonymous function function to read from the AI buffer and plot the images once per frame
+                obj.hAITask.registerEveryNSamplesEvent(@obj.readAndDisplayLastFrame, size(obj.waveforms,1), false, 'Native');
+
+
                 % * Set up the AO task
                 % Set the size of the output buffer
                 obj.hAOTask.cfgSampClkTiming(obj.sampleRate, 'DAQmx_Val_ContSamps', size(obj.waveforms,1));
