@@ -354,6 +354,18 @@ classdef polishedScanner < handle
             actualSampleRate = obj.hAOTask.sampClkRate;
         end
         function set.sampleRate(obj, newSampleRate)
+            %Do not proceed if the new sample rate is too high for AI or AO
+            if scanimage.util.daqTaskGetMaxSampleRate(obj.hAITask)<newSampleRate 
+                fprintf('Requested sample rate of %d is higher than the maximum allowed AI sample rate: %d\n',...
+                    newSampleRate, round(scanimage.util.daqTaskGetMaxSampleRate(obj.hAITask)) )
+                    return
+            end
+            if scanimage.util.daqTaskGetMaxSampleRate(obj.hAOTask)<newSampleRate 
+                fprintf('Requested sample rate of %d is higher than the maximum allowed AO sample rate: %d\n',...
+                    newSampleRate, round(scanimage.util.daqTaskGetMaxSampleRate(obj.hAOTask)) )
+                    return
+            end
+
             obj.stop
             obj.desiredSampleRate = newSampleRate;
             obj.hAOTask.cfgSampClkTiming(obj.desiredSampleRate, 'DAQmx_Val_ContSamps', size(obj.waveforms,1));
