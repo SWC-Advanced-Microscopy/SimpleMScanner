@@ -71,11 +71,8 @@ classdef polishedScanner < handle
     % because there is no mechanism for handling changes to these parameters on the fly.
     properties (SetAccess=private)
         % These properties are specific to scanning and image construction
-        galvoAmp = 2        % Scanner amplitude (defined as peak-to-peak/2) Increasing this increases the area scanned (CAREFUL!)
         invertSignal = 1    % Set to -1 if using a non-inverting amp with a PMT
         waveforms           % The scanner waveforms will be stored here
-        fillFraction = 0.85 % 1-fillFraction is considered to be the turn-around time and is excluded from the image
-        samplesPerPixel = 2 % Number of samples to average for each pixel
         saveFname = ''
 
         % The following properties are more directly related to setting up the DAQ
@@ -105,6 +102,9 @@ classdef polishedScanner < handle
         correctedPointsPerLine % Actual number of points we will need to collect, this is a fill-fraction-related parameter
         lastFrame % The last acquired frame is stored here
         currentFrame=1;
+
+
+        isRunning=0 %Set to 1 if the scanning is running
     end
 
     properties (Dependent)
@@ -115,12 +115,18 @@ classdef polishedScanner < handle
         sampleRate % The user can change the sample rate here
         FPS % Returns the number of frames per second
         imSize
+        galvoAmp
+        fillFraction
+        samplesPerPixel
     end
 
     properties (Hidden)
         % These properties are related to the dependent properties
         desiredSampleRate = 128E3  % The target sample rate for the board to run at (Hz)
         desired_imSize = 256 % Number pixel rows and columns
+        desired_galvoAmp =2
+        desired_fillFraction = 0.85 % 1-fillFraction is considered to be the turn-around time and is excluded from the image
+        desired_samplesPerPixel = 2 % Number of samples to average for each pixel
     end
 
 
@@ -192,7 +198,7 @@ classdef polishedScanner < handle
                 obj.hAOTask = dabs.ni.daqmx.Task('waveformMaker');
 
                 %  Set up analog input and output voltage channels
-                obj.hAITask.createAIVoltageChan(obj.DAQDevice, obj.AIChan, [], -obj.AIrange, obj.AIrange, [], [], obj.AIterminalConfig);
+                obj.hAITask.createAIVoltageChan(obj.DAQDevice, obj.AIChan, [], -obj.AIrange, obj.AIrange)%, [], [], obj.AIterminalConfig);
                 obj.hAOTask.createAOVoltageChan(obj.DAQDevice, obj.AOChans);
 
 
@@ -229,6 +235,10 @@ classdef polishedScanner < handle
         function start(obj)
             % This method starts acquisition on the AO then the AI task. 
             % Acquisition begins immediately since there are no external triggers.
+            if obj.isRunning
+                fprintf('Scanning is already running\n')
+                return
+            end
             try
                 obj.hAOTask.start();
                 obj.hAITask.start();
@@ -237,6 +247,7 @@ classdef polishedScanner < handle
                 %Tidy up if we fail
                 obj.delete
             end
+            obj.isRunning=1;
         end %close start
 
 
@@ -244,6 +255,7 @@ classdef polishedScanner < handle
             % Stop the AI and then AO tasks
             obj.hAITask.stop;    % Calls DAQmxStopTask
             obj.hAOTask.stop;
+            obj.isRunning=0;
         end %close stop
 
 
@@ -303,7 +315,7 @@ classdef polishedScanner < handle
             obj.hIm.CData = rot90(obj.lastFrame) * obj.invertSignal;
 
 
-            obj.hTitle.String = sprintf('Current Frame: %d',obj.currentFrame);
+            obj.hTitle.String = sprintf('Frame: #%d, %0.2f FPS',obj.currentFrame,obj.FPS);
             obj.currentFrame=obj.currentFrame+1;
 
             obj.saveLastFrame
@@ -353,6 +365,7 @@ classdef polishedScanner < handle
             fps=obj.sampleRate/length(obj.waveforms);
         end
 
+        %The following getters and setters allow changing of scan settings on the fly
         function imSize=get.imSize(obj)
             imSize = obj.desired_imSize;
         end
@@ -360,6 +373,32 @@ classdef polishedScanner < handle
             obj.desired_imSize=val;
             obj.regnerateWaveforms
         end
+
+        function galvoAmp=get.galvoAmp(obj)
+            galvoAmp = obj.desired_galvoAmp;
+        end
+        function set.galvoAmp(obj,val)
+            obj.desired_galvoAmp=val;
+            obj.regnerateWaveforms
+        end
+
+        function fillFraction=get.fillFraction(obj)
+            fillFraction = obj.desired_fillFraction;
+        end
+        function set.fillFraction(obj,val)
+            obj.desired_fillFraction=val;
+            obj.regnerateWaveforms
+        end      
+
+        function samplesPerPixel=get.samplesPerPixel(obj)
+            samplesPerPixel = obj.desired_samplesPerPixel;
+        end
+        function set.samplesPerPixel(obj,val)
+            obj.desired_samplesPerPixel=val;
+            obj.regnerateWaveforms
+        end
+
+
     end %close getters and setters methods block
 
 
@@ -377,7 +416,7 @@ classdef polishedScanner < handle
 
                 obj.hAOTask.control('DAQmx_Val_Task_Unreserve') %This line is critical for allowing new data to be written
                 obj.hAOTask.set('writeRelativeTo','DAQmx_Val_FirstSample')
-                
+
                 obj.hAOTask.cfgSampClkTiming(obj.desiredSampleRate, 'DAQmx_Val_ContSamps', nSamples);
                 obj.hAOTask.set('writeRegenMode', 'DAQmx_Val_AllowRegen');
 
@@ -387,7 +426,7 @@ classdef polishedScanner < handle
                 % Write the waveform to the buffer with a 5 second timeout in case it fails
                 obj.hAOTask.writeAnalogData(obj.waveforms, 5)
                 obj.hAITask.registerEveryNSamplesEvent(@obj.readAndDisplayLastFrame, size(obj.waveforms,1), false, 'Scaled');
-                
+
             catch ME
                 errorDisplay(ME)
                 obj.delete
