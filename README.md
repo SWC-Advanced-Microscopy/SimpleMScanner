@@ -71,7 +71,7 @@ It does not implement bidirectional scanning or multiple channels.
 
 
 * **scanAndAcquire_OO** - The same features as scanAndAcquire_Polished but in an object-oriented interface. 
-The purpose of this it to contrast procedural with object-oriented code.
+It uses the DAQ Toolbox.
 
 * **scannerGUI** - A simple GUI wrapper class for scanAndAcquire_OO. 
 This showcases some of the advantages of using object-oriented techniques for data acquisition and GUI-building. 
@@ -82,7 +82,6 @@ Currently the scannerGUI provides the following features:
   2. Switches back and forth between unidirectional and bidirectional modes.
   3. Allows update of the bidirectional phase delay whilst scanning.
   4. Most properties of the object can be changed dynamically during scanning via the GUI. 
-  5. Saving to disk.
 
 
 

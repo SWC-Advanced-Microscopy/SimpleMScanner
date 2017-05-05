@@ -35,16 +35,8 @@ classdef polishedScanner < handle
     %
     %
     % Examples
-    % The following example shows how to list the available DAQ devices and start
-    % scanAndAcquire_Minimal using the ID for the NI PCI-6115 card with the default. 
-    % scanning options. 
+    % The following example shows how to start polishedScanner and change scan settings on the fly.
     %
-    % >> listDeviceIDs
-    % The devices on your system are:
-    %     aux1
-    %     aux2
-    %     Dev1
-    %     scan
     %
     % >> S=polishedScanner('Dev2') % By default it's 'Dev1'
     % >> S.stop   % Stops the scanning
@@ -146,11 +138,13 @@ classdef polishedScanner < handle
                 obj.saveFname=saveFname;
             end
 
-            fprintf('Please see "help polishedScanner for usage information\n')
+            fprintf('Please see "help polishedScanner" for usage information\n')
 
             % Build the figure window and have it shut off the acquisition when closed.
             obj.hFig = clf;
-            set(obj.hFig, 'Name', 'Close figure to stop acquisition', 'CloseRequestFcn', @obj.windowCloseFcn)
+            set(obj.hFig, 'Name', 'Close figure to stop acquisition', ...
+             'CloseRequestFcn', @obj.windowCloseFcn, ...
+             'Toolbar', 'None')
 
             %Make an empty axis and fill with a blank image
             obj.imAxes = axes('Parent', obj.hFig, 'Position', [0.05 0.05 0.9 0.9]);
@@ -166,6 +160,9 @@ classdef polishedScanner < handle
             obj.connectToDAQandSetUpChannels
 
             % Start the acquisition
+            %Report frame rate to screen
+            fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n', ...
+             obj.imSize, obj.imSize, obj.FPS);
             obj.start
             fprintf('Close figure to quit acquisition\n')
         end % close constructor
@@ -282,9 +279,6 @@ classdef polishedScanner < handle
             % Assemble the two waveforms into an N-by-2 array
             obj.waveforms = [xWaveform(:), yWaveform(:)];
 
-            %Report frame rate to screen
-            fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n', ...
-             obj.imSize, obj.imSize, obj.FPS);
         end %close generateScanWaveforms
 
 

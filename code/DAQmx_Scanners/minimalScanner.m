@@ -34,8 +34,7 @@ classdef minimalScanner < handle
     %
     % Examples
     % The following example shows how to list the available DAQ devices and start
-    % scanAndAcquire_Minimal using the ID for the NI PCI-6115 card with the default. 
-    % scanning options. 
+    % minimalScanner.
     %
     % >> listDeviceIDs
     % The devices on your system are:
@@ -67,9 +66,6 @@ classdef minimalScanner < handle
         imSize = 256        % Number pixel rows and columns
         invertSignal = 1     % Set to -1 if using a non-inverting amp with a PMT
         waveforms           % The scanner waveforms will be stored here
-
-        % The following properties are more directly related to setting up the DAQ
-
 
         %Properties for the analog input end of things
         hAITask %The AI task will be kept here
@@ -108,7 +104,7 @@ classdef minimalScanner < handle
                 obj.DAQDevice = deviceID;
             end
 
-            fprintf('Please see "help minimalScanner for usage information\n')
+            fprintf('Please see "help minimalScanner" for usage information\n')
 
             % Build the figure window and have it shut off the acquisition when closed.
             obj.hFig = clf;
@@ -134,7 +130,6 @@ classdef minimalScanner < handle
 
         function delete(obj)
             % This method is the "destructor". It runs when an instance of the class is deleted.
-            fprintf('Tidying up minimalScanner\n')
             obj.hFig.delete %Closes the plot window
             obj.stop % Call the method that stops the DAQmx tasks
 

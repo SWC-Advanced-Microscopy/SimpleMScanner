@@ -40,8 +40,7 @@ classdef basicScanner < handle
     %
     % Examples
     % The following example shows how to list the available DAQ devices and start
-    % scanAndAcquire_Minimal using the ID for the NI PCI-6115 card with the default. 
-    % scanning options. 
+    % basicScanner.
     %
     % >> listDeviceIDs
     % The devices on your system are:
@@ -53,8 +52,11 @@ classdef basicScanner < handle
     % >> S=basicScanner('Dev2') % By default it's 'Dev1'
     % >> S.stop  % stops the scanning
     % >> S.start % re-starts the scanning
+    % >> S.delete % (or close the figure window)
     %
     %
+    % % Acquire using 'Dev1' and save data to a file
+    % >> S = basicScanner('Dev1','testImageStack.tiff')
     %
     % Requirements
     % DAQmx and the Vidrio dabs.ni.daqmx wrapper
@@ -76,9 +78,6 @@ classdef basicScanner < handle
         fillFraction = 0.85 % 1-fillFraction is considered to be the turn-around time and is excluded from the image
         samplesPerPixel = 2 % Number of samples to average for each pixel
         saveFname = ''
-
-        % The following properties are more directly related to setting up the DAQ
-        DAQDevice = 'Dev1'
 
         % Properties for the analog input end of things
         hAITask %The AI task will be kept here
@@ -126,7 +125,7 @@ classdef basicScanner < handle
                 obj.saveFname=saveFname;
             end
 
-            fprintf('Please see "help basicScanner for usage information\n')
+            fprintf('Please see "help basicScanner" for usage information\n')
 
             % Build the figure window and have it shut off the acquisition when closed.
             obj.hFig = clf;
@@ -153,7 +152,6 @@ classdef basicScanner < handle
 
         function delete(obj)
             % This method is the "destructor". It runs when an instance of the class is deleted.
-            fprintf('Tidying up basicScanner\n')
             obj.hFig.delete %Closes the plot window
             obj.stop % Call the method that stops the DAQmx tasks
 
