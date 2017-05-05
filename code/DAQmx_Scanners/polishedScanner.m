@@ -54,6 +54,10 @@ classdef polishedScanner < handle
     %      0.8446
     %
     %
+    % KNOWN BUGS:
+    % Going from smaller to larger image sizes causes a crash when running on a simulated device. 
+    %
+    %
     % Requirements
     % DAQmx and the Vidrio dabs.ni.daqmx wrapper
     %
@@ -155,11 +159,7 @@ classdef polishedScanner < handle
 
             %Make an empty axis and fill with a blank image
             obj.imAxes = axes('Parent', obj.hFig, 'Position', [0.05 0.05 0.9 0.9]);
-            obj.hIm = imagesc(obj.imAxes,zeros(obj.imSize));
-            obj.hTitle = title('');
-            set(obj.imAxes, 'XTick', [], 'YTIck', [], 'CLim', [0,obj.AIrange], 'Box', 'on')
-            axis square
-            colormap gray
+            obj.makeBlankFigure % Add a blank image based upon the current image size
 
             % Call a method to connect to the DAQ. If the following line fails, the Tasks are
             % cleaned up gracefully and the object is deleted. This is all done by the method
@@ -426,8 +426,9 @@ classdef polishedScanner < handle
                 % Set the buffer size
                 nSamples=size(obj.waveforms,1);
 
-                obj.hAOTask.control('DAQmx_Val_Task_Unreserve') %This line is critical for allowing new data to be written
-                obj.hAOTask.set('writeRelativeTo','DAQmx_Val_FirstSample')
+                % We must unreserve the DAQ device before writing to the buffer:
+                % https://forums.ni.com/t5/Multifunction-DAQ/How-to-flush-output-buffer-optionally-resize-it-and-write-to-it/td-p/3138640
+                obj.hAOTask.control('DAQmx_Val_Task_Unreserve') 
 
                 obj.hAOTask.cfgSampClkTiming(obj.desiredSampleRate, 'DAQmx_Val_ContSamps', nSamples);
                 obj.hAOTask.set('writeRegenMode', 'DAQmx_Val_AllowRegen');
@@ -444,10 +445,21 @@ classdef polishedScanner < handle
                 obj.delete
                 return
             end
+
+            obj.makeBlankFigure
             obj.start
 
-        end
-    end
+        end % close regnerateWaveforms
+
+        function makeBlankFigure(obj)
+            obj.hIm = imagesc(obj.imAxes,zeros(obj.imSize));
+            obj.hTitle = title('');
+            set(obj.imAxes, 'XTick', [], 'YTIck', [], 'CLim', [0,obj.AIrange], 'Box', 'on')
+            axis square
+            colormap gray
+        end % close makeBlankFigure
+
+    end %close hidden methods block
 
 end %close the vidrio.mixed.basicScanner class definition 
 
