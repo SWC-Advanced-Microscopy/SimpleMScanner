@@ -72,7 +72,6 @@ classdef polishedScanner < handle
     properties (SetAccess=private)
         % These properties are specific to scanning and image construction
         galvoAmp = 2        % Scanner amplitude (defined as peak-to-peak/2) Increasing this increases the area scanned (CAREFUL!)
-        imSize = 256        % Number pixel rows and columns
         invertSignal = 1    % Set to -1 if using a non-inverting amp with a PMT
         waveforms           % The scanner waveforms will be stored here
         fillFraction = 0.85 % 1-fillFraction is considered to be the turn-around time and is excluded from the image
@@ -115,11 +114,13 @@ classdef polishedScanner < handle
         % https://www.mathworks.com/help/matlab/matlab_oop/access-methods-for-dependent-properties.html        
         sampleRate % The user can change the sample rate here
         FPS % Returns the number of frames per second
+        imSize
     end
 
     properties (Hidden)
         % These properties are related to the dependent properties
         desiredSampleRate = 128E3  % The target sample rate for the board to run at (Hz)
+        desired_imSize = 256 % Number pixel rows and columns
     end
 
 
@@ -212,7 +213,6 @@ classdef polishedScanner < handle
 
                 % Allow sample regeneration (buffer is circular)
                 obj.hAOTask.set('writeRegenMode', 'DAQmx_Val_AllowRegen');
-
                 % Write the waveform to the buffer with a 5 second timeout in case it fails
                 obj.hAOTask.writeAnalogData(obj.waveforms, 5)
 
@@ -353,7 +353,50 @@ classdef polishedScanner < handle
             fps=obj.sampleRate/length(obj.waveforms);
         end
 
-    end %close getters and setters methods block 
+        function imSize=get.imSize(obj)
+            imSize = obj.desired_imSize;
+        end
+        function set.imSize(obj,val)
+            obj.desired_imSize=val;
+            obj.regnerateWaveforms
+        end
+    end %close getters and setters methods block
+
+
+    methods (Hidden)
+        function regnerateWaveforms(obj)
+            % Regenerates the scan waveforms and send send these to the AO buffer. This method
+            % is used when a scanning parameter is changed in order to begin scanning with the 
+            % new settings.
+            obj.stop
+            obj.generateScanWaveforms
+
+            try
+                % Set the buffer size
+                nSamples=size(obj.waveforms,1);
+
+                obj.hAOTask.control('DAQmx_Val_Task_Unreserve') %This line is critical for allowing new data to be written
+                obj.hAOTask.set('writeRelativeTo','DAQmx_Val_FirstSample')
+                
+                obj.hAOTask.cfgSampClkTiming(obj.desiredSampleRate, 'DAQmx_Val_ContSamps', nSamples);
+                obj.hAOTask.set('writeRegenMode', 'DAQmx_Val_AllowRegen');
+
+                % Write data to the start of the buffer
+
+
+                % Write the waveform to the buffer with a 5 second timeout in case it fails
+                obj.hAOTask.writeAnalogData(obj.waveforms, 5)
+                obj.hAITask.registerEveryNSamplesEvent(@obj.readAndDisplayLastFrame, size(obj.waveforms,1), false, 'Scaled');
+                
+            catch ME
+                errorDisplay(ME)
+                obj.delete
+                return
+            end
+            obj.start
+
+        end
+    end
 
 end %close the vidrio.mixed.basicScanner class definition 
 
