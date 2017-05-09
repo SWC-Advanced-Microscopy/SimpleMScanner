@@ -21,34 +21,42 @@ For example, the [Mai Tai laser](http://www.spectra-physics.com/products/ultrafa
 One interesting feature of 2-photon microscopes is that they are [relatively easy to build](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0110475) with off the shelf parts. 
 In order to acquire an image, the beam needs to be scanned across the specimen and the emitted light collected. 
 [ScanImage](http://scanimage.vidriotechnologies.com), which runs in MATLAB, is a widely used software package for acquiring images and coordinating experiments. 
-However, ScanImage is a complex application and its core scanning code is not accessible to the user. 
-**SimpleMScanner** is a collection of example tutorial code to show how to write scanning software for a 2-photon microscope. 
-SimpleMScanner is not designed to be a complete application, but rather a teaching aid or perhaps even a basis upon which to begin writing a complete application. 
+However, ScanImage is a complex application which does a lot of things in addition to image acquisition. 
+**SimpleMScanner** is a collection of example tutorial code to show how to write scanning software for a linear scanning (not resonant) 2-photon microscope. 
+SimpleMScanner is a teaching aid, not a complete application.
 
 
 ## What you will need
-SimpleMScanner has been tested on MATLAB R2015a and R2015b and requires the [Data Acquisition Toolbox](https://uk.mathworks.com/products/daq/). 
+SimpleMScanner has been tested on MATLAB R2015a and R2015b and requires the [Data Acquisition Toolbox](https://uk.mathworks.com/products/daq/) and/or 
+the [Vidrio](http://scanimage.vidriotechnologies.com) `dabs.ni.daqmx` wrapper. 
+For more details on DAQ tasks in MATLAB see [the TENSS DAQmx examples](https://github.com/tenss/MatlabDAQmx).
 You will also need a National Instruments device to coordinate scanning and data acquisition. 
-It has been tested on NI PCI-6110, PCI-6115, and USB-6356 devices. It should work on other similar boards supported by the Data Acquisition Toolbox. 
+It has been tested on NI PCI-6110, PCI-6115, and USB-6356 devices and should work on other similar boards. 
 Of course you will also need at least a set of scan mirrors, a scan lens, a tube lens, an objective, some form of detector and a laser. 
-For educational purposes, it is possible to use a laser pointer and a photo-diode that detects transmitted light through a thin sample. 
+For educational purposes, it is possible to use a laser pointer and a photo-diode that detects transmitted light through a thin, high contrast, sample such as an EM grid. 
+
 
 # Contents of this project
+SimpleMScanner contains examples written using both The Mathworks Data Acquisition Toolbox and the Vidrio `dabs.ni.daqmx` wrapper.
 
-* **scanAndAcquire_Minimal** - This tutorial function is the least you need to scan the mirrors across a sample and obtain an image:
+* **DAQ_ToolBox_Scanners/scanAndAcquire_Minimal** - 
+  This tutorial function uses the DAQ Toolbox and is the least you need to scan the mirrors across a sample and obtain an image:
   1. Uni-directional scanning.
   2. Displays image to screen only.
   3. One channel only.
   4. No correction for imaging artefacts.
   5. Scanning parameters are hard-coded into the function. User can change scanner amplitude, number of pixels in the image, and sample rate.
+**DAQmx_Scanners/minimalScanner** is the equivilent using the Vidrio wrapper, but it's object-oriented.
 
-* **scanAndAcquire_Basic** - This tutorial function is the least you need to get good images and save them to disk. 
-It provides the same features as scanAndAcquire_Minimal but adds:
+* **DAQ_ToolBox_Scanners/scanAndAcquire_Basic** - 
+  This tutorial function is the least you need to get good images and save them to disk. 
+  It uses the DAQ Toolbox and provides the same features as scanAndAcquire_Minimal but adds:
   1. [Averaging using multiple samples per pixel](https://raw.githubusercontent.com/tenss/SimpleMScanner/gh-pages/images/samples_per_pix_example.jpg).
   2. Correction of the X mirror (fast axis) turn-around artefact.
   3. Saving to disk as a TIFF stack. A function to read back the data is provided.
+**DAQmx_Scanners/basicScanner** is the equivilent using the Vidrio wrapper, but it's object-oriented.
 
-* **scanAndAcquire_Polished** - The same as scanAndAcquire_Basic but adds the following features:
+* **DAQ_ToolBox_Scanners/scanAndAcquire_Polished** - The same as scanAndAcquire_Basic but adds the following features:
   1. All important parameters can be set via parameter/value pairs.
   2. More error checks.
   3. Acquisition of multiple channels.
@@ -56,10 +64,14 @@ It provides the same features as scanAndAcquire_Minimal but adds:
   5. Adds an optional histogram overlay on top of the scan images.
   6. Time-stamps added to the saved TIFF info.
   7. Bidirectional scanning.
-  8. Improved buffering to allow for higher frame rates.
+  8. Improved scan waveform buffering to allow for higher frame rates.
+
+**DAQmx_Scanners/polishedScanner** is largely the equivilent using the Vidrio wrapper, but it's object-oriented and focuses on making a nice and robust OO interface.
+It does not implement bidirectional scanning or multiple channels. 
+
 
 * **scanAndAcquire_OO** - The same features as scanAndAcquire_Polished but in an object-oriented interface. 
-The purpose of this it to contrast procedural with object-oriented code.
+It uses the DAQ Toolbox.
 
 * **scannerGUI** - A simple GUI wrapper class for scanAndAcquire_OO. 
 This showcases some of the advantages of using object-oriented techniques for data acquisition and GUI-building. 
@@ -70,7 +82,6 @@ Currently the scannerGUI provides the following features:
   2. Switches back and forth between unidirectional and bidirectional modes.
   3. Allows update of the bidirectional phase delay whilst scanning.
   4. Most properties of the object can be changed dynamically during scanning via the GUI. 
-  5. Saving to disk.
 
 
 
@@ -84,4 +95,4 @@ High powered lasers should only be operated by trained individuals.
 It is good practice to confirm the scan waveforms with an oscilloscope before feeding them to the scan mirrors. 
 Start with smaller amplitude scan patterns and lower frame rates so as not to damage your scanners. 
 Immediately stop scanning if the mirrors make unusual chirping noises and/or the image breaks down.
-PMTs are delicate and can be damaged by high light levels.
+PMTs can be damaged by normal ambient light levels and must be operated in the dark.

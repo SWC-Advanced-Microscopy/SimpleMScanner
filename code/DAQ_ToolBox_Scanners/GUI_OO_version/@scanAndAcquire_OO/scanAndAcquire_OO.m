@@ -91,7 +91,7 @@ classdef  scanAndAcquire_OO < handle
 
     properties (Dependent)
         sampleRate
-        AIrange   
+        AIrange
         inputChans
     end %close dependent properties
     
