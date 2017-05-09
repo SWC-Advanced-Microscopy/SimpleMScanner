@@ -75,7 +75,7 @@ classdef polishedScanner < handle
     % because there is no mechanism for handling changes to these parameters on the fly.
     properties (SetAccess=private)
         % These properties are specific to scanning and image construction
-        invertSignal = 1    % Set to -1 if using a non-inverting amp with a PMT
+        invertSignal = -1    % Set to -1 if using a non-inverting amp with a PMT
         waveforms           % The scanner waveforms will be stored here
         saveFname = ''
 
@@ -86,8 +86,8 @@ classdef polishedScanner < handle
         hAITask %The AI task will be kept here
 
         AIChan = 0 
-        AIterminalConfig = 'DAQmx_Val_RSE' %Valid values: 'DAQmx_Val_Cfg_Default', 'DAQmx_Val_RSE', 'DAQmx_Val_NRSE', 'DAQmx_Val_Diff', 'DAQmx_Val_PseudoDiff'
-        AIrange = 2  % Digitise over +/- this range. 
+        AIterminalConfig = 'DAQmx_Val_PseudoDiff' %Valid values: 'DAQmx_Val_Cfg_Default', 'DAQmx_Val_RSE', 'DAQmx_Val_NRSE', 'DAQmx_Val_Diff', 'DAQmx_Val_PseudoDiff'
+        AIrange = 0.5  % Digitise over +/- this range. 
 
         % Properties for the analog output end of things
         hAOTask % The AO task will be kept here
@@ -198,7 +198,7 @@ classdef polishedScanner < handle
                 obj.hAOTask = dabs.ni.daqmx.Task('waveformMaker');
 
                 %  Set up analog input and output voltage channels
-                obj.hAITask.createAIVoltageChan(obj.DAQDevice, obj.AIChan, [], -obj.AIrange, obj.AIrange)%, [], [], obj.AIterminalConfig);
+                obj.hAITask.createAIVoltageChan(obj.DAQDevice, obj.AIChan, [], -obj.AIrange, obj.AIrange, [], [], obj.AIterminalConfig);
                 obj.hAOTask.createAOVoltageChan(obj.DAQDevice, obj.AOChans);
 
 

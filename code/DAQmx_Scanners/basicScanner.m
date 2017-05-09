@@ -71,9 +71,9 @@ classdef basicScanner < handle
     % because there is no mechanism for handling changes to these parameters on the fly.
     properties (SetAccess=private)
         % These properties are specific to scanning and image construction
-        galvoAmp = 2        % Scanner amplitude (defined as peak-to-peak/2) Increasing this increases the area scanned (CAREFUL!)
+        galvoAmp = 1.5        % Scanner amplitude (defined as peak-to-peak/2) Increasing this increases the area scanned (CAREFUL!)
         imSize = 256        % Number pixel rows and columns
-        invertSignal = 1    % Set to -1 if using a non-inverting amp with a PMT
+        invertSignal = -1    % Set to -1 if using a non-inverting amp with a PMT
         waveforms           % The scanner waveforms will be stored here
         fillFraction = 0.85 % 1-fillFraction is considered to be the turn-around time and is excluded from the image
         samplesPerPixel = 2 % Number of samples to average for each pixel
@@ -83,8 +83,8 @@ classdef basicScanner < handle
         hAITask %The AI task will be kept here
 
         AIChan = 0 
-        AIterminalConfig = 'DAQmx_Val_RSE' %Valid values: 'DAQmx_Val_Cfg_Default', 'DAQmx_Val_RSE', 'DAQmx_Val_NRSE', 'DAQmx_Val_Diff', 'DAQmx_Val_PseudoDiff'
-        AIrange = 2  % Digitise over +/- this range. 
+        AIterminalConfig = 'DAQmx_Val_PseudoDiff' %Valid values: 'DAQmx_Val_Cfg_Default', 'DAQmx_Val_RSE', 'DAQmx_Val_NRSE', 'DAQmx_Val_Diff', 'DAQmx_Val_PseudoDiff'
+        AIrange = 0.5  % Digitise over +/- this range. 
 
         % Properties for the analog output end of things
         hAOTask % The AO task will be kept here
