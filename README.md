@@ -46,7 +46,8 @@ SimpleMScanner contains examples written using both The Mathworks Data Acquisiti
   3. One channel only.
   4. No correction for imaging artefacts.
   5. Scanning parameters are hard-coded into the function. User can change scanner amplitude, number of pixels in the image, and sample rate.
-<br />
+  <br />
+  
 **DAQmx_Scanners/minimalScanner** is the equivilent using the Vidrio wrapper, but it's object-oriented.
 
 * **DAQ_ToolBox_Scanners/scanAndAcquire_Basic** - 
@@ -67,7 +68,8 @@ SimpleMScanner contains examples written using both The Mathworks Data Acquisiti
   6. Time-stamps added to the saved TIFF info.
   7. Bidirectional scanning.
   8. Improved scan waveform buffering to allow for higher frame rates.
-<br />
+  <br />
+  
 **DAQmx_Scanners/polishedScanner** is largely the equivilent using the Vidrio wrapper, but it's object-oriented and focuses on making a nice and robust OO interface.
 It does not implement bidirectional scanning or multiple channels. 
 
