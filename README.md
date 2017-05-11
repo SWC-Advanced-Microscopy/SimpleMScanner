@@ -46,6 +46,7 @@ SimpleMScanner contains examples written using both The Mathworks Data Acquisiti
   3. One channel only.
   4. No correction for imaging artefacts.
   5. Scanning parameters are hard-coded into the function. User can change scanner amplitude, number of pixels in the image, and sample rate.
+<br />
 **DAQmx_Scanners/minimalScanner** is the equivilent using the Vidrio wrapper, but it's object-oriented.
 
 * **DAQ_ToolBox_Scanners/scanAndAcquire_Basic** - 
@@ -54,6 +55,7 @@ SimpleMScanner contains examples written using both The Mathworks Data Acquisiti
   1. [Averaging using multiple samples per pixel](https://raw.githubusercontent.com/tenss/SimpleMScanner/gh-pages/images/samples_per_pix_example.jpg).
   2. Correction of the X mirror (fast axis) turn-around artefact.
   3. Saving to disk as a TIFF stack. A function to read back the data is provided.
+  <br />
 **DAQmx_Scanners/basicScanner** is the equivilent using the Vidrio wrapper, but it's object-oriented.
 
 * **DAQ_ToolBox_Scanners/scanAndAcquire_Polished** - The same as scanAndAcquire_Basic but adds the following features:
@@ -65,7 +67,7 @@ SimpleMScanner contains examples written using both The Mathworks Data Acquisiti
   6. Time-stamps added to the saved TIFF info.
   7. Bidirectional scanning.
   8. Improved scan waveform buffering to allow for higher frame rates.
-
+<br />
 **DAQmx_Scanners/polishedScanner** is largely the equivilent using the Vidrio wrapper, but it's object-oriented and focuses on making a nice and robust OO interface.
 It does not implement bidirectional scanning or multiple channels. 
 
@@ -87,7 +89,12 @@ Currently the scannerGUI provides the following features:
 
 * The repository also contains a folder of utility functions. Currently just one for loading the saved TIFF stacks from disk.
 
+# Also see
 * For basic DAQmx examples and other introductory concepts see [MatlabDAQmx](https://github.com/tenss/MatlabDAQmx)
+* [PTRRupprecht/Instrument-Control](https://github.com/PTRRupprecht/Instrument-Control)
+* [HelioScan](http://helioscan.github.io/HelioScan/)
+* [SciScan](http://www.scientifica.uk.com/products/scientifica-sciscan)
+* [ScanImage](https://vidriotechnologies.com/)
 
 # Disclaimer
 This software is supplied "as is" and the author(s) are not responsible for hardware damage, blindness, etc, caused by use (or misuse) of this software. 
