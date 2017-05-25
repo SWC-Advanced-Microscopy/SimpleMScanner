@@ -11,41 +11,45 @@ classdef waveformTester < handle
     %
     %
     % Instructions
-    % Start the class with the device ID of your NI acquisition board as an input argument. 
-    % Quit by closing the window showing the scanned image stream. Doing this will gracefully
-    % stop the acquisition. 
-    % The X mirror should be on AO-0
-    % The Y mirror should be on AO-1
+    % * Edit "DAQDevice" to be the ID if your DAQ card. 
+    % * Hook up AO0 to the galvo command voltage terminal.
+    % * Copy AO0 to AI0
+    % * Connect AI1 to the galvo position signal
+    % * Run: S=waveformTester
     %
-    % Inputs
-    % hardwareDeviceID - [Optional, default is 'Dev1'] A string defining the device ID of your 
-    %                    NI acquisition board. Use the command "daq.getDevices" to find the ID 
-    %                    of your board. By default this is 'Dev1'
-    % saveFname - An optional string defining the relative or absolute path of a file to which data 
-    %             should be written. Data will be written as a TIFF stack. If not supplied, no data 
-    %             are saved to disk. 
+    % You will see a sinusoidal black trace overlaid by a red trace. The black is the command signal
+    % and the red the position signal. The blue sub-plot shows the position signal as a function of 
+    % the command signal. Frequency of the waveform is displayed in the window title and at the 
+    % command line. 
     %
+    % You can stop acquisition by closing the window. 
     %
+    % NOTE with USB DAQs: you will get error -200877 if the AI buffer is too small.
     %
-    % Examples
-    % The following example shows how to list the available DAQ devices and start
-    % waveformTester.
+    % 
+    % Things try:
+    % The scanners have inertia so their ability to following the command waveform will depend upon
+    % it shape and frequency. Let's try changing the frequency. Close the window (take screenshot first
+    % if you want to compare before and after) and edit the "sampleRate" property. Increase it to, say,
+    % 128E3. Re-start the object. Notice the larger lag between the position and command and how this is 
+    % reflected in the blue X/Y plot "opening up". 
     %
-    % >> listDeviceIDs
-    % The devices on your system are:
-    %     aux1
-    %     aux2
-    %     Dev1
-    %     scan
+    % Let's now try having fewer samples per cycle. Stop, set "pixelsPerLine" to 128, and restart.
+    % If you're scanners can't keep up, try a larger value. At 128 samplesPerLine and 128 kHz sample 
+    % rate the scanner runs at 1 kHz. There will be a big lag now. If your scanners will keep up, you
+    % can try lines as short as about 32 pixels, which is 4 kHz. Don't push beyond this in case the 
+    % scanners can't cope. Also, don't try such high frequencies with other waveforms.
     %
-    % >> S=waveformTester('Dev2') % By default it's 'Dev1'
-    % >> S.stop  % stops the scanning
-    % >> S.start % re-starts the scanning
-    % >> S.delete % (or close the figure window)
+    % Go back to 1 kHz and try different amplitudes. See how the lag is the same. 
     %
+    % Now let's explore AO/AI synchronisation. Set pixelsPerLine to 128 and the sample rate to 128E3. 
+    % All should look good. Try a range of different, but similar, sample rates. e.g. 117E3. Likely you
+    % will see an on-screen warning message and precesion of the AI waveforms relative to the AO. 
+    % You can fix this by setting the AI and AO clocks to be shared as in the polishedScanner class. 
     %
-    % % Acquire using 'Dev1' and save data to a file
-    % >> S = waveformTester('Dev1','testImageStack.tiff')
+    % Try a sawtooth waveform by modifying the waveformType property. Start with a frequency below 500 Hz 
+    % then try higher frequency (e.g. 2 kHz). How well do the scanners follow the command signal?
+    %
     %
     % Requirements
     % DAQmx and the Vidrio dabs.ni.daqmx wrapper
@@ -59,28 +63,29 @@ classdef waveformTester < handle
     % the user changing them at the command line. Doing so would cause the acquisition to exhibit errors
     % because there is no mechanism for handling changes to these parameters on the fly.
     properties (SetAccess=private)
+
+        % These properties are common to both tasks
+        DAQDevice = 'Dev1'
+        sampleRate = 128E3  % The sample rate at which the board runs (Hz)
+
+
         % These properties are specific to scanning and image construction
-        galvoAmp = 1          % Scanner amplitude (defined as peak-to-peak/2)
-        pixelsPerLine = 512       % Number pixels per line
+        galvoAmp = 3          % Scanner amplitude (defined as peak-to-peak/2)
+        pixelsPerLine = 512        % Number pixels per line
         waveform                   % The scanner waveform will be stored here
         numReps=10                 % How many times to repeat this waveform in one acquisiion
-        fillFraction = 0.85        % 1-fillFraction is considered to be the turn-around time and is excluded from the image
-
 
         % Properties for the analog input end of things
         hAITask %The AI task handle will be kept here
 
         AIChan = [0,1] 
-        AIterminalConfig = 'DAQmx_Val_PseudoDiff' %Valid values: 'DAQmx_Val_Cfg_Default', 'DAQmx_Val_RSE', 'DAQmx_Val_NRSE', 'DAQmx_Val_Diff', 'DAQmx_Val_PseudoDiff'
         AIrange = 5  % Digitise over +/- this range. 
 
         % Properties for the analog output end of things
         hAOTask % The AO task handle will be kept here
         AOChans = 0
 
-        % These properties are common to both tasks
-        DAQDevice = 'Dev1'
-        sampleRate = 128E3  % The sample rate at which the board runs (Hz)
+        waveformType='sawtooth'  %can also be 'sawtooth'
     end % close properties block
 
 
@@ -108,10 +113,13 @@ classdef waveformTester < handle
 
             % Build the figure window and have it shut off the acquisition when closed.
             obj.hFig = clf;
-            set(obj.hFig, 'Name', 'Close figure to stop acquisition', 'CloseRequestFcn', @obj.windowCloseFcn)
+            set(obj.hFig, 'CloseRequestFcn', @obj.windowCloseFcn)
 
             %Make an empty axis and fill with a blank image
-            obj.hAxes = axes('Parent', obj.hFig, 'Position', [0.05 0.05 0.9 0.9],'NextPlot','add','YLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15]);
+            obj.hAxes = axes('Parent', obj.hFig, 'Position', [0.09 0.1 0.89 0.88],'NextPlot','add', ...
+                'YLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15]);
+            obj.hAxes.XLabel.String = 'Time (ms)';
+            obj.hAxes.YLabel.String = 'Voltage';
             obj.hPltDataAO0 = plot(obj.hAxes, zeros(100,1), '-k');
             obj.hPltDataAO1 = plot(obj.hAxes, zeros(100,1), '-r');
 
@@ -119,22 +127,25 @@ classdef waveformTester < handle
             % cleaned up gracefully and the object is deleted. This is all done by the method
             % call and by the destructor
             obj.connectToDAQandSetUpChannels
-            set(obj.hAxes,'XLim',[0,length(obj.waveform)], 'Box', 'on')
-            grid on
-            legend('command','position')
 
-            % Make the inset plot
-            obj.hAxesXY = axes('Parent', obj.hFig, 'Position', [0.75 0.05 0.2 0.2])
-            obj.hPltDataXY = plot(obj.hAxesXY, zeros(100,1), '-b');
-            set(obj.hAxesXY, 'XTickLabel', [], 'YTickLabel',[], ...
-                'YLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15],'XLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15]);
-            obj.hAxesXY.Color=[0.8,0.8,0.95,0.75]; %background blue and transparent
-            grid on
-
-
-
-            % Start the acquisition
             if isvalid(obj)
+                set(obj.hAxes,'XLim',[0,length(obj.waveform)], 'Box', 'on')
+                set(obj.hAxes, 'XLim', [0,length(obj.waveform)/obj.sampleRate*1E3])
+                grid on
+                legend('command','position')
+
+                % Make the inset plot
+                obj.hAxesXY = axes('Parent', obj.hFig, 'Position', [0.8 0.1 0.2 0.2]);
+                obj.hPltDataXY = plot(obj.hAxesXY, zeros(100,1), '-b.');
+                set(obj.hAxesXY, 'XTickLabel', [], 'YTickLabel',[], ...
+                    'YLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15],'XLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15]);
+                obj.hAxesXY.Color=[0.8,0.8,0.95,0.75]; %background blue and transparent
+                grid on
+                axis square
+
+                set(obj.hFig,'Name', sprintf('Close figure to stop acquisition - waveform frequency=%0.1f HZ',1/obj.linePeriod) )
+
+                % Start the acquisition
                 obj.start
                 fprintf('Close figure to quit acquisition\n')
             end
@@ -175,7 +186,7 @@ classdef waveformTester < handle
                 % Configure the sampling rate and the number of samples so that we are reading back data at the end of each waveform
                 obj.generateScanWaveform %This will populate the waveforms property
 
-                obj.hAITask.cfgSampClkTiming(obj.sampleRate,'DAQmx_Val_ContSamps', size(obj.waveform,1) * 4);
+                obj.hAITask.cfgSampClkTiming(obj.sampleRate,'DAQmx_Val_ContSamps', size(obj.waveform,1)*100 );
 
                 % Call an anonymous function function to read from the AI buffer and plot the images once per frame
                 obj.hAITask.registerEveryNSamplesEvent(@obj.readAndDisplayScanData, size(obj.waveform,1), false, 'Scaled');
@@ -184,7 +195,6 @@ classdef waveformTester < handle
                 % * Set up the AO task
                 % Set the size of the output buffer
                 obj.hAOTask.cfgSampClkTiming(obj.sampleRate, 'DAQmx_Val_ContSamps', size(obj.waveform,1));
-
 
                 if obj.hAOTask.sampClkRate ~= obj.hAITask.sampClkRate
                     fprintf(['\nWARNING: AI task sample clock rate does not match AO task sample clock rate. Scan lines will precess.\n', ...
@@ -195,7 +205,7 @@ classdef waveformTester < handle
                 obj.hAOTask.set('writeRegenMode', 'DAQmx_Val_AllowRegen');
 
                 % Write the waveform to the buffer with a 5 second timeout in case it fails
-                obj.hAOTask.writeAnalogData(obj.waveform, 5)
+                obj.hAOTask.writeAnalogData(obj.waveform, 5);
 
                 % Configure the AO task to start as soon as the AI task starts
                 obj.hAOTask.cfgDigEdgeStartTrig(['/',obj.DAQDevice,'/ai/StartTrigger'], 'DAQmx_Val_Rising');
@@ -232,20 +242,24 @@ classdef waveformTester < handle
         function generateScanWaveform(obj)
             % This method builds a simple ("unshaped") galvo waveform and stores it in the obj.waveform
 
-            % The X waveform goes from +galvoAmp to -galvoAmp over the course of one line.
-            xWaveform = linspace(-obj.galvoAmp, obj.galvoAmp, obj.pixelsPerLine); 
-            obj.waveform = repmat(xWaveform, 1, obj.numReps)'; % Repeat the X waveform a few times to ease visualisation on-screen
+            switch obj.waveformType
 
-            % sine wave
-            obj.waveform = obj.galvoAmp *  sin(linspace(-pi*obj.numReps, pi*obj.numReps, obj.pixelsPerLine*obj.numReps))';
+            case 'sawtooth'
+                % The X waveform goes from +galvoAmp to -galvoAmp over the course of one line.
+                xWaveform = linspace(-obj.galvoAmp, obj.galvoAmp, obj.pixelsPerLine); 
+                obj.waveform = repmat(xWaveform, 1, obj.numReps)'; % Repeat the X waveform a few times to ease visualisation on-screen
 
+            case 'sine'
+                % sine wave
+                obj.waveform = obj.galvoAmp *  sin(linspace(-pi*obj.numReps, pi*obj.numReps, obj.pixelsPerLine*obj.numReps))';
+            end
 
 
 
             %Report waveform properties
-            linePeriod = length(obj.waveform) / (obj.sampleRate*obj.numReps);
+         
             fprintf('Scanning with a waveform of length %d and a line period of %0.3f ms (%0.1f Hz)\n', ...
-             obj.pixelsPerLine, linePeriod*1E3, 1/linePeriod);
+             obj.pixelsPerLine, obj.linePeriod*1E3, 1/obj.linePeriod);
 
         end %close generateScanWaveform
 
@@ -258,11 +272,13 @@ classdef waveformTester < handle
             % Read data off the DAQ
             inData = readAnalogData(src,src.everyNSamples,'Scaled');
 
+            timeAxis = (0:length(inData)-1) / obj.sampleRate*1E3;
             obj.hPltDataAO0.YData = inData(:,1);
-
+            obj.hPltDataAO0.XData=timeAxis;
             %Scale the feedback signal so it's the same amplitude as the command
             scaleFactor = max(inData(:,1)) / max(inData(:,2));
             obj.hPltDataAO1.YData = inData(:,2)*scaleFactor;
+            obj.hPltDataAO1.XData=timeAxis;
 
             obj.hPltDataXY.YData = inData(:,2)*scaleFactor;
             obj.hPltDataXY.XData = inData(:,1);
@@ -277,6 +293,15 @@ classdef waveformTester < handle
             fprintf('You closed the window. Shutting down DAQ.\n')
             obj.delete % simply call the destructor
         end %close windowCloseFcn
+
+
+        function LP = linePeriod(obj)
+           if isempty(obj.waveform) 
+               LP=[];
+                return
+            end
+            LP = length(obj.waveform) / (obj.sampleRate*obj.numReps);
+        end % close linePeriod
 
     end %close methods block
 
