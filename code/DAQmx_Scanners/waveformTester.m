@@ -33,7 +33,7 @@ classdef waveformTester < handle
     % and command and how this is reflected in the blue X/Y plot "opening up". 
     %
     % Let's now try having fewer samples per cycle. Stop, set "pixelsPerLine" to 128, and restart.
-    % If you're scanners can't keep up, try a larger value. At 128 samplesPerLine and 128 kHz sample 
+    % If your scanners can't keep up, try a larger value. At 128 samplesPerLine and 128 kHz sample 
     % rate the scanner runs at 1 kHz. There will be a big lag now. If your scanners will keep up, you
     % can try lines as short as about 32 pixels, which is 4 kHz. Don't push beyond this in case the 
     % scanners can't cope. Also, don't try such high frequencies with other command waveform shapes.
@@ -53,7 +53,7 @@ classdef waveformTester < handle
     % DAQmx and the Vidrio dabs.ni.daqmx wrapper
     %
     % See Also:
-    % minimalScanner
+    % min lScanner
 
 
 
@@ -67,7 +67,7 @@ classdef waveformTester < handle
         sampleRate = 32E3  % The sample rate at which the board runs (Hz)
 
 
-        % These properties are specific to scanning and image construction
+        % These properties are specific to scanning
         galvoAmp = 3          % Scanner amplitude (defined as peak-to-peak/2)
         pixelsPerLine = 256        % Number pixels per line for a sawtooth waveform (for sine wave this defines wavelength)
         waveform                   % The scanner waveform will be stored here
@@ -91,12 +91,11 @@ classdef waveformTester < handle
         % These properties hold information relevant to the plot window
         % They are hidden as well as protected for neatness.
         hFig    % The handle to the figure which shows the data is stored here
-        hAxes  % Handle for the image axes
-        hAxesXY %to plot AI1 as a function of AI0
-        hPltDataAO0
-        hPltDataAO1
-        hPltDataXY
-        hTitle  % Handle that stores the plot title
+        hAxes   % Handle for the main axes
+        hAxesXY % Handle fo the plot of AI1 as a function of AI0
+        hPltDataAO0 % AO0 plot data
+        hPltDataAO1 % AO1 plot data
+        hPltDataXY  % AO0 vs AO1 plot data
     end
 
 
@@ -113,7 +112,7 @@ classdef waveformTester < handle
             obj.hFig = clf;
             set(obj.hFig, 'CloseRequestFcn', @obj.windowCloseFcn)
 
-            %Make an empty axis and fill with a blank image
+            %Make an empty axis and fill with blank data
             obj.hAxes = axes('Parent', obj.hFig, 'Position', [0.09 0.1 0.89 0.88],'NextPlot','add', ...
                 'YLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15]);
             obj.hAxes.XLabel.String = 'Time (ms)';
@@ -137,11 +136,11 @@ classdef waveformTester < handle
                 obj.hPltDataXY = plot(obj.hAxesXY, zeros(100,1), '-b.');
                 set(obj.hAxesXY, 'XTickLabel', [], 'YTickLabel',[], ...
                     'YLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15],'XLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15]);
-                obj.hAxesXY.Color=[0.8,0.8,0.95,0.75]; %background blue and transparent
+                obj.hAxesXY.Color=[0.8,0.8,0.95,0.75]; %blue background  and transparent (4th input, an undocumented MATLAB feature)
                 grid on
                 axis square
 
-                set(obj.hFig,'Name', sprintf('Close figure to stop acquisition - waveform frequency=%0.1f HZ',1/obj.linePeriod) )
+                set(obj.hFig,'Name', sprintf('Close figure to stop acquisition - waveform frequency=%0.1f HZ', 1/obj.linePeriod) )
 
                 % Start the acquisition
                 obj.start
@@ -158,8 +157,6 @@ classdef waveformTester < handle
             end
             obj.stop % Call the method that stops the DAQmx tasks
 
-            % The tasks should delete automatically (which causes dabs.ni.daqmx.Task.delete to 
-            % call DAQmxClearTask on each task) but for paranoia we can delete manually:
             obj.hAITask.delete;
             obj.hAOTask.delete;
         end %close destructor
