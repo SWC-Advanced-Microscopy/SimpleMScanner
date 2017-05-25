@@ -9,10 +9,10 @@ classdef waveformTester < handle
     %
     %
     % Instructions
-    % * Edit "DAQDevice" property so it is the ID of your DAQ card. 
-    % * Hook up AO0 to the galvo command voltage terminal.
+    % * Edit the "DAQDevice" property so it is the ID of your DAQ card. 
+    % * Hook up AO0 to the galvo command (input) voltage terminal.
     % * Wire up the rack to copy AO0 to AI0
-    % * Connect AI1 to the galvo position signal output
+    % * Connect AI1 to the galvo position (output) terminal.
     % * Run: S=waveformTester;
     %
     % You will see a sinusoidal black trace overlaid by a red trace. The black is the command signal
