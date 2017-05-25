@@ -69,7 +69,7 @@ classdef waveformTester < handle
 
         % These properties are specific to scanning and image construction
         galvoAmp = 3          % Scanner amplitude (defined as peak-to-peak/2)
-        pixelsPerLine = 256        % Number pixels per line
+        pixelsPerLine = 256        % Number pixels per line for a sawtooth waveform (for sine wave this defines wavelength)
         waveform                   % The scanner waveform will be stored here
         numReps=10                 % How many times to repeat this waveform in one acquisiion
 
