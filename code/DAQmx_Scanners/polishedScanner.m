@@ -167,11 +167,13 @@ classdef polishedScanner < handle
             obj.connectToDAQandSetUpChannels
 
             % Start the acquisition
-            %Report frame rate to screen
-            fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n', ...
-             obj.imSize, obj.imSize, obj.FPS);
-            obj.start
-            fprintf('Close figure to quit acquisition\n')
+            if isvalid(obj)
+                %Report frame rate to screen
+                fprintf('Scanning with a frame size of %d by %d at %0.2f frames per second\n', ...
+                 obj.imSize, obj.imSize, obj.FPS);
+                obj.start
+                fprintf('Close figure to quit acquisition\n')
+            end
         end % close constructor
 
 

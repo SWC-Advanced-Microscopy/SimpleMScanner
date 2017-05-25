@@ -122,9 +122,11 @@ classdef minimalScanner < handle
             % call and by the destructor
             obj.connectToDAQandSetUpChannels
 
-            % Start the acquisition
-            obj.start
-            fprintf('Close figure to quit acquisition\n')
+            if isvalid(obj)
+                % Start the acquisition
+                obj.start
+                fprintf('Close figure to quit acquisition\n')
+            end
         end % close constructor
 
 
