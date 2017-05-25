@@ -60,10 +60,10 @@ classdef waveformTester < handle
     % because there is no mechanism for handling changes to these parameters on the fly.
     properties (SetAccess=private)
         % These properties are specific to scanning and image construction
-        galvoAmp = 1.5             % Scanner amplitude (defined as peak-to-peak/2)
-        pixelsPerLine = 256        % Number pixels per line
-        waveform                   % The scanner waveforms will be stored here
-        numReps=4                  % How many times to repeat this waveform in one acquisiion
+        galvoAmp = 1          % Scanner amplitude (defined as peak-to-peak/2)
+        pixelsPerLine = 512       % Number pixels per line
+        waveform                   % The scanner waveform will be stored here
+        numReps=10                 % How many times to repeat this waveform in one acquisiion
         fillFraction = 0.85        % 1-fillFraction is considered to be the turn-around time and is excluded from the image
 
 
@@ -72,7 +72,7 @@ classdef waveformTester < handle
 
         AIChan = [0,1] 
         AIterminalConfig = 'DAQmx_Val_PseudoDiff' %Valid values: 'DAQmx_Val_Cfg_Default', 'DAQmx_Val_RSE', 'DAQmx_Val_NRSE', 'DAQmx_Val_Diff', 'DAQmx_Val_PseudoDiff'
-        AIrange = 0.5  % Digitise over +/- this range. 
+        AIrange = 5  % Digitise over +/- this range. 
 
         % Properties for the analog output end of things
         hAOTask % The AO task handle will be kept here
@@ -89,7 +89,10 @@ classdef waveformTester < handle
         % They are hidden as well as protected for neatness.
         hFig    % The handle to the figure which shows the data is stored here
         hAxes  % Handle for the image axes
-        hPltData     % Handle produced by imagesc
+        hAxesXY %to plot AI1 as a function of AI0
+        hPltDataAO0
+        hPltDataAO1
+        hPltDataXY
         hTitle  % Handle that stores the plot title
     end
 
@@ -101,13 +104,6 @@ classdef waveformTester < handle
         function obj=waveformTester
             % This method is the "constructor", it runs when the class is instantiated.
 
-
-            % Call a method to connect to the DAQ. If the following line fails, the Tasks are
-            % cleaned up gracefully and the object is deleted. This is all done by the method
-            % call and by the destructor
-            obj.connectToDAQandSetUpChannels
-
-
             fprintf('Please see "help waveformTester" for usage information\n')
 
             % Build the figure window and have it shut off the acquisition when closed.
@@ -115,20 +111,42 @@ classdef waveformTester < handle
             set(obj.hFig, 'Name', 'Close figure to stop acquisition', 'CloseRequestFcn', @obj.windowCloseFcn)
 
             %Make an empty axis and fill with a blank image
-            obj.hAxes = axes('Parent', obj.hFig, 'Position', [0.05 0.05 0.9 0.9]);
-            obj.hPltData = plot(obj.hAxes, obj.waveform);
-            set(obj.hAxes, 'Box', 'on')
+            obj.hAxes = axes('Parent', obj.hFig, 'Position', [0.05 0.05 0.9 0.9],'NextPlot','add','YLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15]);
+            obj.hPltDataAO0 = plot(obj.hAxes, zeros(100,1), '-k');
+            obj.hPltDataAO1 = plot(obj.hAxes, zeros(100,1), '-r');
+
+            % Call a method to connect to the DAQ. If the following line fails, the Tasks are
+            % cleaned up gracefully and the object is deleted. This is all done by the method
+            % call and by the destructor
+            obj.connectToDAQandSetUpChannels
+            set(obj.hAxes,'XLim',[0,length(obj.waveform)], 'Box', 'on')
+            grid on
+            legend('command','position')
+
+            % Make the inset plot
+            obj.hAxesXY = axes('Parent', obj.hFig, 'Position', [0.75 0.05 0.2 0.2])
+            obj.hPltDataXY = plot(obj.hAxesXY, zeros(100,1), '-b');
+            set(obj.hAxesXY, 'XTickLabel', [], 'YTickLabel',[], ...
+                'YLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15],'XLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15]);
+            obj.hAxesXY.Color=[0.8,0.8,0.95,0.75]; %background blue and transparent
+            grid on
+
 
 
             % Start the acquisition
-            obj.start
-            fprintf('Close figure to quit acquisition\n')
+            if isvalid(obj)
+                obj.start
+                fprintf('Close figure to quit acquisition\n')
+            end
         end % close constructor
 
 
         function delete(obj)
             % This method is the "destructor". It runs when an instance of the class is deleted.
-            obj.hFig.delete %Closes the plot window
+            fprintf('Running destructor\n');
+            if ~isempty(obj.hFig) && isvalid(obj.hFig)
+                obj.hFig.delete %Closes the plot window
+            end
             obj.stop % Call the method that stops the DAQmx tasks
 
             % The tasks should delete automatically (which causes dabs.ni.daqmx.Task.delete to 
@@ -148,37 +166,36 @@ classdef waveformTester < handle
                 obj.hAOTask = dabs.ni.daqmx.Task('waveformMaker');
 
                 %  Set up analog input and output voltage channels
-                obj.hAITask.createAIVoltageChan(obj.DAQDevice, obj.AIChan, [], -obj.AIrange, obj.AIrange, [], [], obj.AIterminalConfig);
+                obj.hAITask.createAIVoltageChan(obj.DAQDevice, obj.AIChan, [], -obj.AIrange, obj.AIrange);
                 obj.hAOTask.createAOVoltageChan(obj.DAQDevice, obj.AOChans);
 
 
                 % * Set up the AI task
 
-                % Configure the sampling rate and the number of samples so that we are reading back
-                % data at the end of each frame 
-                obj.generateScanWaveforms %This will populate the waveforms property
+                % Configure the sampling rate and the number of samples so that we are reading back data at the end of each waveform
+                obj.generateScanWaveform %This will populate the waveforms property
 
-                obj.hAITask.cfgSampClkTiming(obj.sampleRate,'DAQmx_Val_ContSamps', size(obj.waveforms,1) * 4);
+                obj.hAITask.cfgSampClkTiming(obj.sampleRate,'DAQmx_Val_ContSamps', size(obj.waveform,1) * 4);
 
                 % Call an anonymous function function to read from the AI buffer and plot the images once per frame
-                obj.hAITask.registerEveryNSamplesEvent(@obj.readAndDisplayScanData, size(obj.waveforms,1), false, 'Scaled');
+                obj.hAITask.registerEveryNSamplesEvent(@obj.readAndDisplayScanData, size(obj.waveform,1), false, 'Scaled');
 
 
                 % * Set up the AO task
                 % Set the size of the output buffer
-                obj.hAOTask.cfgSampClkTiming(obj.sampleRate, 'DAQmx_Val_ContSamps', size(obj.waveforms,1));
+                obj.hAOTask.cfgSampClkTiming(obj.sampleRate, 'DAQmx_Val_ContSamps', size(obj.waveform,1));
 
 
                 if obj.hAOTask.sampClkRate ~= obj.hAITask.sampClkRate
-                    fprintf(['WARNING: AI task sample clock rate does not match AO task sample clock rate. Scan lines will precess.\n', ...
-                        'This issue is corrected in polishedScanner, which uses a shared sample clock between AO and AI\n'])
+                    fprintf(['\nWARNING: AI task sample clock rate does not match AO task sample clock rate. Scan lines will precess.\n', ...
+                        'This issue is corrected in polishedScanner, which uses a shared sample clock between AO and AI\n\n'])
                 end
 
                 % Allow sample regeneration (buffer is circular)
                 obj.hAOTask.set('writeRegenMode', 'DAQmx_Val_AllowRegen');
 
                 % Write the waveform to the buffer with a 5 second timeout in case it fails
-                obj.hAOTask.writeAnalogData(obj.waveforms, 5)
+                obj.hAOTask.writeAnalogData(obj.waveform, 5)
 
                 % Configure the AO task to start as soon as the AI task starts
                 obj.hAOTask.cfgDigEdgeStartTrig(['/',obj.DAQDevice,'/ai/StartTrigger'], 'DAQmx_Val_Rising');
@@ -212,20 +229,25 @@ classdef waveformTester < handle
         end %close stop
 
 
-        function generateScanWaveforms(obj)
+        function generateScanWaveform(obj)
             % This method builds a simple ("unshaped") galvo waveform and stores it in the obj.waveform
 
             % The X waveform goes from +galvoAmp to -galvoAmp over the course of one line.
             xWaveform = linspace(-obj.galvoAmp, obj.galvoAmp, obj.pixelsPerLine); 
+            obj.waveform = repmat(xWaveform, 1, obj.numReps)'; % Repeat the X waveform a few times to ease visualisation on-screen
 
-            % Repeat the X waveform a few times to ease visualisation on-screen
-            obj.waveform = repmat(xWaveform, 1, obj.numReps);
+            % sine wave
+            obj.waveform = obj.galvoAmp *  sin(linspace(-pi*obj.numReps, pi*obj.numReps, obj.pixelsPerLine*obj.numReps))';
+
+
+
 
             %Report waveform properties
-            fprintf('Scanning with a waveform of length %d and a line period of %0.3f ms\n', ...
-             obj.imSize, (obj.sampleRate/length(obj.waveforms))*obj.numReps*1E3 );
+            linePeriod = length(obj.waveform) / (obj.sampleRate*obj.numReps);
+            fprintf('Scanning with a waveform of length %d and a line period of %0.3f ms (%0.1f Hz)\n', ...
+             obj.pixelsPerLine, linePeriod*1E3, 1/linePeriod);
 
-        end %close generateScanWaveforms
+        end %close generateScanWaveform
 
 
         function readAndDisplayScanData(obj,src,evnt)
@@ -236,8 +258,14 @@ classdef waveformTester < handle
             % Read data off the DAQ
             inData = readAnalogData(src,src.everyNSamples,'Scaled');
 
-            obj.hPltData.YData = inData(:,1);
+            obj.hPltDataAO0.YData = inData(:,1);
 
+            %Scale the feedback signal so it's the same amplitude as the command
+            scaleFactor = max(inData(:,1)) / max(inData(:,2));
+            obj.hPltDataAO1.YData = inData(:,2)*scaleFactor;
+
+            obj.hPltDataXY.YData = inData(:,2)*scaleFactor;
+            obj.hPltDataXY.XData = inData(:,1);
         end %close readAndDisplayScanData
 
 
