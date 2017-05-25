@@ -108,7 +108,7 @@ classdef waveformTester < handle
             set(obj.hFig, 'CloseRequestFcn', @obj.windowCloseFcn)
 
             %Make an empty axis and fill with blank data
-            obj.hAxes = axes('Parent', obj.hFig, 'Position', [0.09 0.1 0.89 0.88],'NextPlot','add', ...
+            obj.hAxes = axes('Parent', obj.hFig, 'Position', [0.09 0.1 0.89 0.88], 'NextPlot', 'add', ...
                 'YLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15]);
             obj.hAxes.XLabel.String = 'Time (ms)';
             obj.hAxes.YLabel.String = 'Voltage';
@@ -127,12 +127,17 @@ classdef waveformTester < handle
                 legend('command','position')
 
                 % Make the inset plot
-                obj.hAxesXY = axes('Parent', obj.hFig, 'Position', [0.8 0.1 0.2 0.2]);
+                obj.hAxesXY = axes('Parent', obj.hFig, 'Position', [0.8 0.1 0.2 0.2], 'NextPlot', 'add');
                 obj.hPltDataXY = plot(obj.hAxesXY, zeros(100,1), '-b.');
                 set(obj.hAxesXY, 'XTickLabel', [], 'YTickLabel',[], ...
                     'YLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15],'XLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15]);
+                %Add "crosshairs" to show x=0 and y=0
+                plot(obj.hAxesXY, [-obj.galvoAmp*1.15,obj.galvoAmp*1.15], [0,0], ':k');
+                plot(obj.hAxesXY, [0,0], [-obj.galvoAmp*1.15,obj.galvoAmp*1.15], ':k');
+
                 obj.hAxesXY.Color=[0.8,0.8,0.95,0.75]; %blue background  and transparent (4th input, an undocumented MATLAB feature)
                 grid on
+                box on
                 axis square
 
                 set(obj.hFig,'Name', sprintf('Close figure to stop acquisition - waveform frequency=%0.1f HZ', 1/obj.linePeriod) )
