@@ -66,6 +66,7 @@ classdef waveformTester < handle
         DAQDevice = 'Dev1'
         sampleRate = 32E3  % The sample rate at which the board runs (Hz)
 
+        waveformType='sine'  % Waveform shape. Valid values are: 'sine', 'sawtooth'
 
         % These properties are specific to scanning
         galvoAmp = 3          % Scanner amplitude (defined as peak-to-peak/2)
@@ -83,13 +84,7 @@ classdef waveformTester < handle
         hAOTask % The AO task handle will be kept here
         AOChans = 0
 
-        waveformType='sawtooth'  %can also be 'sawtooth'
-    end % close properties block
-
-
-    properties (Hidden,SetAccess=private)
         % These properties hold information relevant to the plot window
-        % They are hidden as well as protected for neatness.
         hFig    % The handle to the figure which shows the data is stored here
         hAxes   % Handle for the main axes
         hAxesXY % Handle fo the plot of AI1 as a function of AI0
