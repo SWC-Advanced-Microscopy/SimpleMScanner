@@ -1,13 +1,11 @@
 classdef waveformTester < handle
-    % Minimal code needed to acquire data from one channel of a 2-photon microscope
+    % Generate and test various galvo waveforms
     %
     % waveformTester
     %
     %
     % Description:
-    % This is a tutorial class to explore the scan waveform. The waveform for the X mirror
-    % is played out of AO0 and sent to the X scan control card. It's also copied to AI0. 
-    % AI1 gets the galvo position feedback signal. Parameters are set by editing the properties.
+    % This is a tutorial class to explore the scan waveform. Parameters are set by editing the properties.
     %
     %
     % Instructions
