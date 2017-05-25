@@ -11,11 +11,11 @@ classdef waveformTester < handle
     %
     %
     % Instructions
-    % * Edit "DAQDevice" to be the ID if your DAQ card. 
+    % * Edit "DAQDevice" property so it is the ID of your DAQ card. 
     % * Hook up AO0 to the galvo command voltage terminal.
-    % * Copy AO0 to AI0
-    % * Connect AI1 to the galvo position signal
-    % * Run: S=waveformTester
+    % * Wire up the rack to copy AO0 to AI0
+    % * Connect AI1 to the galvo position signal output
+    % * Run: S=waveformTester;
     %
     % You will see a sinusoidal black trace overlaid by a red trace. The black is the command signal
     % and the red the position signal. The blue sub-plot shows the position signal as a function of 
@@ -28,23 +28,23 @@ classdef waveformTester < handle
     %
     % 
     % Things try:
-    % The scanners have inertia so their ability to following the command waveform will depend upon
-    % it shape and frequency. Let's try changing the frequency. Close the window (take screenshot first
-    % if you want to compare before and after) and edit the "sampleRate" property. Increase it to, say,
-    % 128E3. Re-start the object. Notice the larger lag between the position and command and how this is 
-    % reflected in the blue X/Y plot "opening up". 
+    % The scanners have inertia so their ability to follow the command waveform will depend upon
+    % its shape and frequency. Let's try changing the frequency. Close the figure window (take 
+    % screenshot first if you want to compare before and after) and edit the "sampleRate" property.
+    % Increase it to, say 128E3. Re-start the object. Notice the larger lag between the position 
+    % and command and how this is reflected in the blue X/Y plot "opening up". 
     %
     % Let's now try having fewer samples per cycle. Stop, set "pixelsPerLine" to 128, and restart.
     % If you're scanners can't keep up, try a larger value. At 128 samplesPerLine and 128 kHz sample 
     % rate the scanner runs at 1 kHz. There will be a big lag now. If your scanners will keep up, you
     % can try lines as short as about 32 pixels, which is 4 kHz. Don't push beyond this in case the 
-    % scanners can't cope. Also, don't try such high frequencies with other waveforms.
+    % scanners can't cope. Also, don't try such high frequencies with other command waveform shapes.
     %
-    % Go back to 1 kHz and try different amplitudes. See how the lag is the same. 
+    % Go back to 1 kHz and try different amplitudes. See how the lag is the same across amplitudes. 
     %
     % Now let's explore AO/AI synchronisation. Set pixelsPerLine to 128 and the sample rate to 128E3. 
     % All should look good. Try a range of different, but similar, sample rates. e.g. 117E3. Likely you
-    % will see an on-screen warning message and precesion of the AI waveforms relative to the AO. 
+    % will see a warning message and precession of the AI waveforms (this is relative to the AO). 
     % You can fix this by setting the AI and AO clocks to be shared as in the polishedScanner class. 
     %
     % Try a sawtooth waveform by modifying the waveformType property. Start with a frequency below 500 Hz 
@@ -66,12 +66,12 @@ classdef waveformTester < handle
 
         % These properties are common to both tasks
         DAQDevice = 'Dev1'
-        sampleRate = 128E3  % The sample rate at which the board runs (Hz)
+        sampleRate = 32E3  % The sample rate at which the board runs (Hz)
 
 
         % These properties are specific to scanning and image construction
         galvoAmp = 3          % Scanner amplitude (defined as peak-to-peak/2)
-        pixelsPerLine = 512        % Number pixels per line
+        pixelsPerLine = 256        % Number pixels per line
         waveform                   % The scanner waveform will be stored here
         numReps=10                 % How many times to repeat this waveform in one acquisiion
 
