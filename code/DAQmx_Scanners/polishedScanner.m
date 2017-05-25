@@ -86,7 +86,6 @@ classdef polishedScanner < handle
         hAITask %The AI task will be kept here
 
         AIChan = 0 
-        AIterminalConfig = 'DAQmx_Val_PseudoDiff' %Valid values: 'DAQmx_Val_Cfg_Default', 'DAQmx_Val_RSE', 'DAQmx_Val_NRSE', 'DAQmx_Val_Diff', 'DAQmx_Val_PseudoDiff'
         AIrange = 0.5  % Digitise over +/- this range. 
 
         % Properties for the analog output end of things
@@ -200,7 +199,7 @@ classdef polishedScanner < handle
                 obj.hAOTask = dabs.ni.daqmx.Task('waveformMaker');
 
                 %  Set up analog input and output voltage channels
-                obj.hAITask.createAIVoltageChan(obj.DAQDevice, obj.AIChan, [], -obj.AIrange, obj.AIrange, [], [], obj.AIterminalConfig);
+                obj.hAITask.createAIVoltageChan(obj.DAQDevice, obj.AIChan, [], -obj.AIrange, obj.AIrange); % can set terminal config mode here 
                 obj.hAOTask.createAOVoltageChan(obj.DAQDevice, obj.AOChans);
 
 
