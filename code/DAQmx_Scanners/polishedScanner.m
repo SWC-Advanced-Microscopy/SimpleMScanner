@@ -53,6 +53,16 @@ classdef polishedScanner < handle
     %   ans =
     %      0.8446
     %
+    % You can do the same thing with the image size:
+    % >> S.imSize  % To see the image size
+    %    ans = 
+    %         256
+    % >> S.imSize=512 % To change it
+    % 
+    % Other properties that can be changed on the fly:
+    % fillFraction, samplesPerPixel, and galvoAmplitude 
+    %
+    %
     %
     % KNOWN BUGS:
     % Going from smaller to larger image sizes causes a crash when running on a simulated device. 
@@ -66,7 +76,6 @@ classdef polishedScanner < handle
 
 
 
-    % TODO: change imSize, fillFraction, samplesPerPixel, and galvo amplitude on the fly
     % TODO: add a start/stop button
     % TODO: add a histogram that can be disabled at the command-line
 
@@ -439,6 +448,7 @@ classdef polishedScanner < handle
 
                 % Write the waveform to the buffer with a 5 second timeout in case it fails
                 obj.hAOTask.writeAnalogData(obj.waveforms, 5)
+                obj.hAITask.cfgSampClkTiming(obj.desiredSampleRate,'DAQmx_Val_ContSamps', size(obj.waveforms,1) * 4, ['/',obj.DAQDevice,'/ao/SampleClock']);                
                 obj.hAITask.registerEveryNSamplesEvent(@obj.readAndDisplayLastFrame, size(obj.waveforms,1), false, 'Scaled');
 
             catch ME
