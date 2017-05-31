@@ -63,6 +63,10 @@ classdef basicScanner < handle
     %
     % See Also:
     % minimalScanner
+    %
+    %
+    % Rob Campbell - Basel, 2017
+
 
 
 

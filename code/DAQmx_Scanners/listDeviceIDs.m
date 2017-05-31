@@ -41,6 +41,7 @@ function varargout=listDeviceIDs(varargin)
     %    resscan X-Series DAQ    PXIe-6341
     %    scan    S-Series DAQ    PXIe-6124
     %
+    %
     % Rob Campbell - Basel, 2017
 
 

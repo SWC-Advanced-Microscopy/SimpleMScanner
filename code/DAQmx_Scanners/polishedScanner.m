@@ -73,11 +73,12 @@ classdef polishedScanner < handle
     %
     % See Also:
     % basicScanner, minimalScanner
+    %
+    %
+    % Rob Campbell - Basel, 2017
 
 
 
-    % TODO: add a start/stop button
-    % TODO: add a histogram that can be disabled at the command-line
 
     % Define properties that we will use for the acquisition. The properties are "protected" to avoid
     % the user changing them at the command line. Doing so would cause the acquisition to exhibit errors

@@ -54,6 +54,9 @@ classdef minimalScanner < handle
     %
     % Requirements
     % DAQmx and the Vidrio dabs.ni.daqmx wrapper
+    %
+    %
+    % Rob Campbell - Basel, 2017
 
 
 
