@@ -53,7 +53,7 @@ classdef waveformTester < handle
     % DAQmx and the Vidrio dabs.ni.daqmx wrapper
     %
     % See Also:
-    % min lScanner
+    % minimalScanner
 
 
 
