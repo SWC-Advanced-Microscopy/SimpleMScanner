@@ -112,8 +112,8 @@ classdef waveformTester < handle
                 'YLim',[-obj.galvoAmp*1.15,obj.galvoAmp*1.15]);
             obj.hAxes.XLabel.String = 'Time (ms)';
             obj.hAxes.YLabel.String = 'Voltage';
-            obj.hPltDataAO0 = plot(obj.hAxes, zeros(100,1), '-k');
-            obj.hPltDataAO1 = plot(obj.hAxes, zeros(100,1), '-r');
+            obj.hPltDataAO0 = plot(obj.hAxes, zeros(100,1), '-k'); % This plot object holds data from AO0
+            obj.hPltDataAO1 = plot(obj.hAxes, zeros(100,1), '-r'); % This plot object holds data from AO1
 
             % Call a method to connect to the DAQ. If the following line fails, the Tasks are
             % cleaned up gracefully and the object is deleted. This is all done by the method
@@ -125,7 +125,8 @@ classdef waveformTester < handle
                 grid on
                 legend('command','position')
 
-                % Make the inset plot
+
+                % Start of code for making the blue inset plot
                 obj.hAxesXY = axes('Parent', obj.hFig, 'Position', [0.8 0.1 0.2 0.2], 'NextPlot', 'add');
                 obj.hPltDataXY = plot(obj.hAxesXY, zeros(100,1), '-b.');
                 set(obj.hAxesXY, 'XTickLabel', [], 'YTickLabel',[], ...
@@ -138,6 +139,7 @@ classdef waveformTester < handle
                 grid on
                 box on
                 axis square
+                % End of code for making the inset plot
 
                 set(obj.hFig,'Name', sprintf('Close figure to stop acquisition - waveform frequency=%0.1f HZ', 1/obj.linePeriod) )
 
