@@ -121,8 +121,7 @@ classdef waveformTester < handle
             obj.connectToDAQandSetUpChannels
 
             if isvalid(obj)
-                set(obj.hAxes,'XLim',[0,length(obj.waveform)], 'Box', 'on')
-                set(obj.hAxes, 'XLim', [0,length(obj.waveform)/obj.sampleRate*1E3])
+                set(obj.hAxes, 'XLim', [0,length(obj.waveform)/obj.sampleRate*1E3], 'Box', 'on')
                 grid on
                 legend('command','position')
 
