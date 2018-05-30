@@ -78,7 +78,7 @@ classdef waveformTester < handle
         hAITask %The AI task handle will be kept here
 
         AIChan = [0,1] 
-        AIrange = 5  % Digitise over +/- this range. 
+        AIrange = 10  % Digitise over +/- this range. 
 
         % Properties for the analog output end of things
         hAOTask % The AO task handle will be kept here
