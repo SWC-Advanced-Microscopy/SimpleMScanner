@@ -241,9 +241,13 @@ classdef waveformTester < handle
             switch obj.waveformType
 
             case 'sawtooth'
-                % The X waveform goes from +galvoAmp to -galvoAmp over the course of one line.
+                % The X waveform goes from +galvoAmp to -galvoAmp over the course of one line:
                 xWaveform = linspace(-obj.galvoAmp, obj.galvoAmp, obj.pixelsPerLine); 
-                obj.waveform = repmat(xWaveform, 1, obj.numReps)'; % Repeat the X waveform a few times to ease visualisation on-screen
+
+                % Repeat the X waveform a few times to ease visualisation on-screen
+                xWaveform = repmat(xWaveform, 1, obj.numReps)';  % NOTE! It's a column vector
+                
+                obj.waveform = xWaveform; % Assign to the waveform property which gets written to the DAQ
 
             case 'sine'
                 % sine wave
