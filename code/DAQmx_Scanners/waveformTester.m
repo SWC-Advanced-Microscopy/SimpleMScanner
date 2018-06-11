@@ -70,19 +70,15 @@ classdef waveformTester < handle
 
         % These properties are specific to scanning
         galvoAmp = 3          % Scanner amplitude (defined as peak-to-peak/2)
-        pixelsPerLine = 256        % Number pixels per line for a sawtooth waveform (for sine wave this defines wavelength)
-        waveform                   % The scanner waveform will be stored here
-        numReps=10                 % How many times to repeat this waveform in one acquisiion
+        pixelsPerLine = 256   % Number pixels per line for a sawtooth waveform (for sine wave this defines wavelength)
+        numReps=10            % How many times to repeat this waveform in one acquisiion
 
         % Properties for the analog input end of things
         hAITask %The AI task handle will be kept here
 
-        AIChan = [0,1] 
-        AIrange = 10  % Digitise over +/- this range. 
-
         % Properties for the analog output end of things
         hAOTask % The AO task handle will be kept here
-        AOChans = 0
+        waveform % The scanner waveform will be stored here
 
         % These properties hold information relevant to the plot window
         hFig    % The handle to the figure which shows the data is stored here
@@ -172,9 +168,9 @@ classdef waveformTester < handle
                 obj.hAITask = dabs.ni.daqmx.Task('signalReceiver');
                 obj.hAOTask = dabs.ni.daqmx.Task('waveformMaker');
 
-                %  Set up analog input and output voltage channels
-                obj.hAITask.createAIVoltageChan(obj.DAQDevice, obj.AIChan, [], -obj.AIrange, obj.AIrange);
-                obj.hAOTask.createAOVoltageChan(obj.DAQDevice, obj.AOChans);
+                %  Set up analog input and output voltage channels, digitizing over +/- 5V
+                obj.hAITask.createAIVoltageChan(obj.DAQDevice, [0,1], [], -5, 5);
+                obj.hAOTask.createAOVoltageChan(obj.DAQDevice, 0);
 
 
                 % * Set up the AI task
