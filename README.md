@@ -97,6 +97,7 @@ Currently the scannerGUI provides the following features:
 * [HelioScan](http://helioscan.github.io/HelioScan/)
 * [SciScan](http://www.scientifica.uk.com/products/scientifica-sciscan)
 * [ScanImage](https://vidriotechnologies.com/)
+* [LSMAQ](https://github.com/danionella/lsmaq) - which is a very similar project
 
 # Disclaimer
 This software is supplied "as is" and the author(s) are not responsible for hardware damage, blindness, etc, caused by use (or misuse) of this software. 
