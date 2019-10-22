@@ -119,7 +119,7 @@ classdef waveformTester < handle
             if isvalid(obj)
                 set(obj.hAxes, 'XLim', [0,length(obj.waveform)/obj.sampleRate*1E3], 'Box', 'on')
                 grid on
-                legend('command','position')
+                legend('command','galvo position')
 
 
                 % Start of code for making the blue inset plot
