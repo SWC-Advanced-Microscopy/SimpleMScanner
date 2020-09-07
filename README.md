@@ -29,7 +29,7 @@ SimpleMScanner is a teaching aid, not a complete application.
 ## What you will need
 SimpleMScanner has been tested on MATLAB R2015a and R2015b and requires the [Data Acquisition Toolbox](https://uk.mathworks.com/products/daq/) and/or 
 the [Vidrio](http://scanimage.vidriotechnologies.com) `dabs.ni.daqmx` wrapper. 
-For more details on DAQ tasks in MATLAB see [the TENSS DAQmx examples](https://github.com/tenss/MatlabDAQmx).
+For more details on DAQ tasks in MATLAB see [the TENSS MATLAB DAQmx examples](https://github.com/tenss/MatlabDAQmx).
 You will also need a National Instruments device to coordinate scanning and data acquisition. 
 It has been tested on NI PCI-6110, PCI-6115, and USB-6356 devices and should work on other similar boards. 
 Of course you will also need at least a set of scan mirrors, a scan lens, a tube lens, an objective, some form of detector and a laser. 
