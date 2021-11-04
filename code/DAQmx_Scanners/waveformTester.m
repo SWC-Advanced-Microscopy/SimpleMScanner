@@ -255,7 +255,7 @@ classdef waveformTester < handle
             %Report waveform properties
          
             fprintf('Scanning with a waveform of length %d and a line period of %0.3f ms (%0.1f Hz)\n', ...
-             obj.pixelsPerLine, obj.linePeriod*1E3, 1/obj.linePeriod);
+             obj.pixelsPerLine, obj.linePeriod*1E3, 1/(2*obj.linePeriod));
 
         end %close generateScanWaveform
 
