@@ -2,7 +2,7 @@
 
 Simple MATLAB 2-photon scanning software for demo and teaching purposes.
 
-<img src="https://github.com/tenss/SimpleMScanner/blob/gh-pages/images/active_cells_smaller.jpg" />
+<img src="https://github.com/SWC-Advanced-Microscopy/SimpleMScanner/blob/gh-pages/images/active_cells_smaller.jpg" />
 
 ## What is this?
 
@@ -29,7 +29,7 @@ SimpleMScanner is a teaching aid, not a complete application.
 ## What you will need
 SimpleMScanner has been tested on MATLAB R2015a and R2015b and requires the [Data Acquisition Toolbox](https://uk.mathworks.com/products/daq/) and/or 
 the [Vidrio](http://scanimage.vidriotechnologies.com) `dabs.ni.daqmx` wrapper. 
-For more details on DAQ tasks in MATLAB see [the TENSS MATLAB DAQmx examples](https://github.com/tenss/MatlabDAQmx).
+For more details on DAQ tasks in MATLAB see [the MATLAB DAQmx examples](https://github.com/SWC-Advanced-Microscopy/MATLAB_DAQmx_examples).
 You will also need a National Instruments device to coordinate scanning and data acquisition. 
 It has been tested on NI PCI-6110, PCI-6115, and USB-6356 devices and should work on other similar boards. 
 Of course you will also need at least a set of scan mirrors, a scan lens, a tube lens, an objective, some form of detector and a laser. 
@@ -53,7 +53,7 @@ SimpleMScanner contains examples written using both The Mathworks Data Acquisiti
 * **DAQ_ToolBox_Scanners/scanAndAcquire_Basic** - 
   This tutorial function is the least you need to get good images and save them to disk. 
   It uses the DAQ Toolbox and provides the same features as scanAndAcquire_Minimal but adds:
-  1. [Averaging using multiple samples per pixel](https://raw.githubusercontent.com/tenss/SimpleMScanner/gh-pages/images/samples_per_pix_example.jpg).
+  1. [Averaging using multiple samples per pixel](https://raw.githubusercontent.com/SWC-Advanced-Microscopy/SimpleMScanner/gh-pages/images/samples_per_pix_example.jpg).
   2. Correction of the X mirror (fast axis) turn-around artefact.
   3. Saving to disk as a TIFF stack. A function to read back the data is provided.
   <br />
@@ -92,7 +92,7 @@ Currently the scannerGUI provides the following features:
 * The repository also contains a folder of utility functions. Currently just one for loading the saved TIFF stacks from disk.
 
 # Also see
-* For basic DAQmx examples and other introductory concepts see [MatlabDAQmx](https://github.com/tenss/MatlabDAQmx)
+* For basic DAQmx examples and other introductory concepts see [MatlabDAQmx](https://github.com/SWC-Advanced-Microscopy/MATLAB_DAQmx_examples)
 * [PTRRupprecht/Instrument-Control](https://github.com/PTRRupprecht/Instrument-Control)
 * [HelioScan](http://helioscan.github.io/HelioScan/)
 * [SciScan](http://www.scientifica.uk.com/products/scientifica-sciscan)
